@@ -123,14 +123,14 @@ export default function App() {
       <div className="ambient ambient--two" />
       <header className="home-topbar">
         <a aria-label="GameConsole inicio" className="brand" href="#inicio">
-          <span className="brand-mark">G</span>
+          <span className="brand-mark motion-safe:animate-pixel-glow">G</span>
           <span>GAME<span className="brand-highlight">CONSOLE</span></span>
         </a>
         <div className="topbar-meta"><span className="online-indicator" /> TU ESPACIO DE JUEGO <span className="meta-divider">/</span> ETAPA 01</div>
         <span className="profile-chip"><span>J</span> JUGADOR</span>
       </header>
 
-      <section className="hero" id="inicio">
+      <section className="hero motion-safe:animate-fade-up" id="inicio">
         <div className="hero-copy">
           <p className="eyebrow"><span className="eyebrow-line" /> BIENVENIDO A TU ARCADE</p>
           <h1>Tu próximo<br /><span>gran juego.</span></h1>
@@ -140,7 +140,7 @@ export default function App() {
           </p>
           <div className="hero-footnote"><span>01</span><i /> TRES JUEGOS. UN SOLO LUGAR.</div>
         </div>
-        <div aria-hidden="true" className="hero-art">
+        <div aria-hidden="true" className="hero-art motion-safe:animate-arcade-float">
           <div className="hero-art__ring hero-art__ring--outer" />
           <div className="hero-art__ring hero-art__ring--inner" />
           <span className="hero-art__cross">＋</span>

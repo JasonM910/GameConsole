@@ -45,9 +45,10 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
         {GAMES.map((game, index) => (
           <button
             aria-pressed={selectedGameId === game.id}
-            className={`game-card game-card--${game.accent}${selectedGameId === game.id ? ' is-selected' : ''}`}
+            className={`game-card game-card--${game.accent} motion-safe:animate-fade-up${selectedGameId === game.id ? ' is-selected' : ''}`}
             key={game.id}
             onClick={() => onSelect(game.id)}
+            style={{ animationDelay: `${index * 90}ms` }}
             type="button"
           >
             <div className="game-card__topline">

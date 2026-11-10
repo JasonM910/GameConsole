@@ -1,6 +1,6 @@
 # GameConsole
 
-Primera etapa del proyecto final: una consola web en React, Vite y JavaScript. Por ahora solo Ajedrez tiene una partida funcional; Pac-Man y Carreras aparecen en el catálogo como módulos pendientes.
+Primera etapa del proyecto final: una consola web en React, Vite, JavaScript y Tailwind CSS, con una interfaz de arcade retro. Por ahora solo Ajedrez tiene una partida funcional; Pac-Man y Carreras aparecen en el catálogo como módulos pendientes.
 
 ## Requisitos y ejecución
 
@@ -21,6 +21,7 @@ npm run build
 ## Qué incluye esta etapa
 
 - Catálogo con Ajedrez, Pac-Man y Carreras.
+- Interfaz adaptable con estética arcade retro, detalles pixel/CRT y animaciones que respetan la preferencia del sistema para reducir movimiento.
 - Partidas locales de Ajedrez para dos personas, con movimientos legales, promoción a elección, jaque, mate, tablas y abandono.
 - Partidas independientes identificadas con UUID y persistidas en `localStorage`. Las pestañas comparten la lista, pero cada partida mantiene su propio identificador y estado.
 - Estructura modular: `src/games` contiene el modelo de partida y las reglas de cada juego; `src/components` contiene la interfaz; `src/services` contiene persistencia y el adaptador de eventos.

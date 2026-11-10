@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChessMatch } from '../games/chess/ChessMatch.js';
 
 const PIECE_SYMBOLS = {
-  wp: '♙',
-  wn: '♘',
-  wb: '♗',
-  wr: '♖',
-  wq: '♕',
-  wk: '♔',
+  wp: '♟',
+  wn: '♞',
+  wb: '♝',
+  wr: '♜',
+  wq: '♛',
+  wk: '♚',
   bp: '♟',
   bn: '♞',
   bb: '♝',
@@ -184,7 +184,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
           <span aria-hidden="true">←</span> Consola
         </button>
         <div className="match-brand">
-          <span className="brand-mark">G</span>
+          <span className="brand-mark motion-safe:animate-pixel-glow">G</span>
           <span>GAME<span className="brand-highlight">CONSOLE</span></span>
         </div>
         <span className="match-id">ID · {match.id.slice(0, 8).toUpperCase()}</span>
@@ -206,7 +206,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
             <div className="player-strip">
               <span className="avatar avatar--dark">♚</span>
               <div><strong>Negras</strong><small>{match.players.black}</small></div>
-              {currentColor === 'b' && match.status === 'in-progress' && <span className="turn-indicator">JUGANDO</span>}
+              {currentColor === 'b' && match.status === 'in-progress' && <span className="turn-indicator motion-safe:animate-blink-soft">JUGANDO</span>}
             </div>
             <div className="board-wrap">
               <div className="board-coordinates board-coordinates--left" aria-hidden="true">
@@ -229,7 +229,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                       role="gridcell"
                       type="button"
                     >
-                      {piece && <span className={`piece piece--${piece.color}`}>{PIECE_SYMBOLS[`${piece.color}${piece.type}`]}</span>}
+                      {piece && <span className={`piece piece--${piece.color} motion-safe:animate-piece-drop`}>{PIECE_SYMBOLS[`${piece.color}${piece.type}`]}</span>}
                       {legalTarget && <span aria-hidden="true" className={piece ? 'legal-capture' : 'legal-dot'} />}
                       {columnIndex === 0 && <span aria-hidden="true" className="square-coordinate">{8 - rowIndex}</span>}
                       {rowIndex === 7 && <span aria-hidden="true" className="square-coordinate square-coordinate--file">{'abcdefgh'[columnIndex]}</span>}
@@ -244,7 +244,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
             <div className="player-strip player-strip--bottom">
               <span className="avatar avatar--light">♔</span>
               <div><strong>Blancas</strong><small>{match.players.white}</small></div>
-              {currentColor === 'w' && match.status === 'in-progress' && <span className="turn-indicator">JUGANDO</span>}
+              {currentColor === 'w' && match.status === 'in-progress' && <span className="turn-indicator motion-safe:animate-blink-soft">JUGANDO</span>}
             </div>
           </div>
 
