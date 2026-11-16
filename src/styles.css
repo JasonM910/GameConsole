@@ -83,7 +83,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .game-card__icon { position: absolute; top: 42px; right: 28px; color: #a4c67f; opacity: .8; font: 70px/.9 'Georgia', serif; text-shadow: 0 5px 23px rgba(184,239,108,.18); transition: transform .25s ease; }
 .game-card:hover .game-card__icon { transform: translateY(-3px) rotate(5deg); }
 .game-card--pacman .game-card__icon { color: #e8c35e; font: 62px/.9 var(--display); }
-.game-card--racing .game-card__icon { color: #e88b6d; font: 63px/.9 var(--display); }
+.game-card--memory .game-card__icon { color: #e88b6d; font: 63px/.9 var(--display); }
 .game-card__copy { margin-top: auto; position: relative; z-index: 1; }
 .game-card__tagline { color: #839087; font-size: 10px; }
 .game-card h3 { margin: 4px 0 3px; font: 600 21px var(--display); letter-spacing: -.04em; }
@@ -234,7 +234,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   .game-grid { grid-template-columns: 1fr; gap: 8px; }
   .game-card { height: 132px; padding: 12px 15px; }
   .game-card__icon { top: 29px; right: 23px; font-size: 59px; }
-  .game-card--pacman .game-card__icon, .game-card--racing .game-card__icon { font-size: 54px; }
+  .game-card--pacman .game-card__icon, .game-card--memory .game-card__icon { font-size: 54px; }
   .game-card__copy { max-width: 70%; }
   .game-card h3 { font-size: 18px; }
   .game-card p { font-size: 10px; }
@@ -438,7 +438,7 @@ body::after {
   box-shadow: 6px 6px 0 rgba(255, 220, 105, .2), 0 0 22px rgba(255, 220, 105, .1);
 }
 
-.game-card--racing:hover, .game-card--racing.is-selected {
+.game-card--memory:hover, .game-card--memory.is-selected {
   border-color: #ff4fd8;
   box-shadow: 6px 6px 0 rgba(255, 79, 216, .2), 0 0 22px rgba(255, 79, 216, .1);
 }
@@ -476,7 +476,7 @@ body::after {
   text-shadow: 0 0 18px rgba(255, 220, 105, .42);
 }
 
-.game-card--racing .game-card__icon {
+.game-card--memory .game-card__icon {
   color: #ff4fd8;
   text-shadow: 0 0 18px rgba(255, 79, 216, .42);
 }

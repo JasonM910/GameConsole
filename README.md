@@ -1,6 +1,6 @@
 # GameConsole
 
-Primera etapa del proyecto final: una consola web en React, Vite, JavaScript y Tailwind CSS, con una interfaz de arcade retro. Por ahora solo Ajedrez tiene una partida funcional; Pac-Man y Carreras aparecen en el catálogo como módulos pendientes.
+Primera etapa del proyecto final: una consola web en React, Vite, JavaScript y Tailwind CSS, con una interfaz de arcade retro. Por ahora solo Ajedrez tiene una partida funcional; Pac-Man y Memoria aparecen en el catálogo como módulos pendientes.
 
 ## Requisitos y ejecución
 
@@ -20,7 +20,7 @@ npm run build
 
 ## Qué incluye esta etapa
 
-- Catálogo con Ajedrez, Pac-Man y Carreras.
+- Catálogo con Ajedrez, Pac-Man y Memoria.
 - Interfaz adaptable con estética arcade retro, detalles pixel/CRT y animaciones que respetan la preferencia del sistema para reducir movimiento.
 - Partidas locales de Ajedrez para dos personas, con movimientos legales, promoción a elección, jaque, mate, tablas y abandono.
 - Partidas independientes identificadas con UUID y persistidas en `localStorage`. Las pestañas comparten la lista, pero cada partida mantiene su propio identificador y estado.
@@ -37,12 +37,12 @@ GameStats valida archivos JSON por lotes y luego produce `resultados.json` media
 
 La integración completa requiere acordar e implementar un puente entre el formato JSON por lotes de GameStats y una API; la consulta de estadísticas queda igualmente pendiente. No se duplican aquí los cálculos de Scala.
 
-Carreras todavía no pertenece al catálogo de GameStats. Para agregarlo allí se necesitaría definir su contrato y tipos de evento en `GameStats/internal/events/schema.go`, incorporar su simulación en `GameStats/internal/simulator`, añadir su analizador en `GameStats/scala/src/main/scala/Gameanalyzers.scala` y ajustar pruebas y documentación. Esos cambios no forman parte de esta etapa y los archivos originales de GameStats no se modificaron.
+Memoria ya pertenece al catálogo de GameStats: tiene contrato de eventos, simulación y analizador. En GameConsole solo aparece como módulo pendiente; su interfaz de juego y la generación de sus eventos aún no están implementadas.
 
 ## Próximas etapas
 
 - Implementar el motor de Ajedrez en Prolog y conectarlo como oponente real.
 - Implementar Pac-Man y sus eventos compatibles.
-- Coordinar la extensión del contrato de GameStats para Carreras antes de generar sus eventos.
+- Implementar Memoria en GameConsole y generar eventos compatibles con el contrato existente de GameStats.
 - Definir con el equipo el puente HTTP para envío y consulta; no se presupone que el procesamiento actual por lotes se vuelva tiempo real automáticamente.
-- Integrar el panel de estadísticas, interfaz de Carreras y tareas de Docker, CI/CD y deployment en las etapas asignadas.
+- Integrar el panel de estadísticas, interfaz de Memoria y tareas de Docker, CI/CD y deployment en las etapas asignadas.

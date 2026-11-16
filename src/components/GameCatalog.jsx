@@ -18,12 +18,12 @@ const GAMES = [
     available: false,
   },
   {
-    id: 'RACING',
-    name: 'Carreras',
-    tagline: 'Velocidad y precisión',
-    description: 'Prepárate para competir en la pista.',
-    accent: 'racing',
-    icon: '↗',
+    id: 'MEMORY',
+    name: 'Memoria',
+    tagline: 'Encuentra las parejas',
+    description: 'Voltea cartas y pon a prueba tu memoria.',
+    accent: 'memory',
+    icon: '▣',
     available: false,
   },
 ];

@@ -19,7 +19,7 @@ test('genera eventos Chess con los campos comunes y los datos admitidos', () => 
   assert.equal(new Date(event.timestamp).toISOString(), event.timestamp);
 });
 
-test('rechaza campos adicionales, movimientos inválidos y Carreras no soportado', () => {
+test('rechaza campos adicionales, movimientos inválidos y Memoria aún no implementada', () => {
   const adapter = new EventAdapter();
   assert.throws(() => adapter.createEvent({
     gameId: 'CHESS',
@@ -36,7 +36,7 @@ test('rechaza campos adicionales, movimientos inválidos y Carreras no soportado
     data: { ply: 1, piece: 'PAWN', from: 'e2', to: 'e2', thinkTimeSeconds: 0 },
   }), /diferentes/);
   assert.throws(() => adapter.createEvent({
-    gameId: 'RACING',
+    gameId: 'MEMORY',
     matchId: 'match-1',
     playerId: 'PLAYER_ONE',
     type: 'MATCH_STARTED',
