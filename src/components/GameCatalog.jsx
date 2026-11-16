@@ -72,9 +72,11 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
         <div className="selection-copy">
           <span className={`selection-dot${selected?.available ? ' is-live' : ''}`} />
           <div>
-            <strong>{selected?.name}</strong>
+            <strong>{selected?.name ?? 'Selecciona un juego para comenzar'}</strong>
             <span>
-              {selected?.available
+              {!selected
+                ? 'Elige una tarjeta del catálogo.'
+                : selected.available
                 ? selected.id === 'CHESS' ? 'Partida local para dos jugadores' : 'Partida individual'
                 : 'Módulo pendiente de implementación'}
             </span>
@@ -84,9 +86,9 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
           <button className="button button--primary" onClick={onStart} type="button">
             <span aria-hidden="true">＋</span> Nueva partida
           </button>
-        ) : (
+        ) : selected ? (
           <span className="selection-note">Disponible en una próxima etapa</span>
-        )}
+        ) : null}
       </div>
     </section>
   );

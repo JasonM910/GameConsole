@@ -57,11 +57,23 @@ test('estadísticas muestra ausencia de datos y errores del servicio', async ({ 
 
 test('Ajedrez conserva movimientos legales y partidas independientes', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByText('Selecciona un juego para comenzar')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Nueva partida/ })).toHaveCount(0);
+  await page.getByRole('button', { name: /Ajedrez/ }).click();
   await page.getByRole('button', { name: /Nueva partida/ }).click();
   await page.getByRole('gridcell', { name: /^e2 / }).click();
   await page.getByRole('gridcell', { name: /^e4/ }).click();
   await expect(page.getByText('Turno de Negras')).toBeVisible();
   await expect(page.getByRole('gridcell', { name: /^e4 / })).toHaveClass(/is-last/);
+});
+
+test('estadísticas informa una desconexión cuando el proxy devuelve un error sin JSON', async ({ page }) => {
+  await page.route('**/api/stats*', (route) => route.fulfill({ status: 500, body: '', contentType: 'text/plain' }));
+  await page.goto('/');
+  await page.getByRole('button', { name: /Estadísticas/ }).click();
+  await expect(page.getByRole('alert')).toContainText('GameStats no está disponible (HTTP 500)');
+  await expect(page.getByRole('alert')).not.toContainText('Unexpected end');
+  await expect(page.getByText('No hay eventos pendientes de envío.', { exact: false })).toBeVisible();
 });
 
 test('integración real: Memoria envía su victoria y el panel muestra las métricas Scala', async ({ page }) => {
@@ -77,7 +89,11 @@ test('integración real: Memoria envía su victoria y el panel muestra las métr
     }
   }
   await expect(page.getByText('¡Victoria! Completaste el juego.')).toBeVisible();
-  await expect(page.getByText('Eventos sincronizados', { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate((id) => {
+    const match = JSON.parse(localStorage.getItem(`gameconsole:match:${id}`));
+    const confirmed = JSON.parse(localStorage.getItem(`gameconsole:delivered:${id}`) ?? '[]');
+    return match.events.every((event) => confirmed.includes(event.eventId));
+  }, record.id)).toBe(true);
   await page.getByRole('button', { name: /Consola/ }).click();
   await page.getByRole('button', { name: /Estadísticas/ }).click();
   const row = page.getByRole('row').filter({ hasText: record.id.slice(0, 8) });

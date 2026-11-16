@@ -1,3 +1,5 @@
+import { readJsonResponse } from './httpResponse.js';
+
 const CHESS_FIELDS = {
   MATCH_STARTED: { side: 'side' },
   MOVE_PLAYED: {
@@ -153,9 +155,8 @@ export class EventAdapter {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(events), signal: AbortSignal.timeout(10000),
     });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error?.message ?? `GameStats respondió HTTP ${response.status}`);
-    if (payload.status !== 'accepted' || !Array.isArray(payload.eventIds)
+    const payload = await readJsonResponse(response);
+    if (payload?.status !== 'accepted' || !Array.isArray(payload.eventIds)
       || payload.eventIds.length !== events.length
       || events.some((event, index) => payload.eventIds[index] !== event.eventId)) {
       throw new Error('GameStats no confirmó todos los eventos enviados');

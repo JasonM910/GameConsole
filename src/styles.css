@@ -75,7 +75,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .catalog-count, .saved-total { color: #748078; padding-bottom: 4px; }
 .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .game-card { position: relative; height: 206px; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 17px 19px; border: 1px solid var(--line); border-radius: 11px; background: linear-gradient(130deg, #19221c, #141c17 80%); cursor: pointer; transition: .2s ease; }
-.game-card:hover, .game-card.is-selected { transform: translateY(-2px); border-color: rgba(184,239,108,.54); background: linear-gradient(130deg, #202d22, #161f19 80%); }
+.game-card:hover { transform: translateY(-2px); border-color: rgba(184,239,108,.54); background: linear-gradient(130deg, #202d22, #161f19 80%); }
 .game-card__topline { display: flex; align-items: center; justify-content: space-between; width: 100%; }
 .game-card__number { color: #66746a; }
 .game-status { padding: 5px 7px; color: #a68e6c; border-radius: 3px; background: rgba(206,160,103,.08); font-size: 8px; }
@@ -89,7 +89,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .game-card h3 { margin: 4px 0 3px; font: 600 21px var(--display); letter-spacing: -.04em; }
 .game-card p { margin: 0; color: #89968c; font-size: 11px; }
 .game-card__arrow { position: absolute; right: 17px; bottom: 18px; color: #859186; font-size: 17px; opacity: 0; transform: translate(-3px,3px); transition: .2s; }
-.game-card:hover .game-card__arrow, .game-card.is-selected .game-card__arrow { opacity: 1; transform: none; color: var(--green); }
+.game-card:hover .game-card__arrow { opacity: 1; transform: none; color: var(--green); }
 .selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 72px; padding: 13px 15px; margin-top: 12px; background: rgba(25,34,28,.8); border: 1px solid var(--line); border-radius: 9px; }
 .selection-copy { display: flex; align-items: center; gap: 11px; }
 .selection-dot.is-live { background: var(--green); box-shadow: 0 0 10px rgba(184,239,108,.5); }
@@ -424,7 +424,7 @@ body::after {
   pointer-events: none;
 }
 
-.game-card:hover, .game-card.is-selected {
+.game-card:hover {
   border-color: #ccff33;
   transform: translate(-2px, -2px);
   background:
@@ -433,12 +433,12 @@ body::after {
   box-shadow: 6px 6px 0 rgba(204, 255, 51, .22), 0 0 22px rgba(204, 255, 51, .1);
 }
 
-.game-card--pacman:hover, .game-card--pacman.is-selected {
+.game-card--pacman:hover {
   border-color: #ffdc69;
   box-shadow: 6px 6px 0 rgba(255, 220, 105, .2), 0 0 22px rgba(255, 220, 105, .1);
 }
 
-.game-card--memory:hover, .game-card--memory.is-selected {
+.game-card--memory:hover {
   border-color: #ff4fd8;
   box-shadow: 6px 6px 0 rgba(255, 79, 216, .2), 0 0 22px rgba(255, 79, 216, .1);
 }

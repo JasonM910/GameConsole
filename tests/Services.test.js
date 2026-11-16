@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { EventDelivery } from '../src/services/EventDelivery.js';
 import { EventAdapter } from '../src/services/EventAdapter.js';
 import { fetchStats } from '../src/services/statsClient.js';
+import { gameStatsTarget } from '../scripts/devConfig.mjs';
 
 function memoryStorage() {
   const values = new Map();
@@ -61,4 +62,32 @@ test('el panel consume el esquema de Scala y codifica filtros sin calcular métr
   assert.equal(result, document);
   await assert.rejects(fetchStats({ fetchImpl: async () => ({ ok: false, json: async () => ({ error: { message: 'Scala sin conexión' } }) }) }), /Scala sin conexión/);
   await assert.rejects(fetchStats({ fetchImpl: async () => ({ ok: true, json: async () => ({}) }) }), /desconocido/);
+});
+
+test('el proxy usa el puerto publicado de Compose y respeta un Go local explícito', () => {
+  assert.equal(gameStatsTarget(), 'http://127.0.0.1:8088');
+  assert.equal(gameStatsTarget({ GAMECONSOLE_PORT: '8090' }), 'http://127.0.0.1:8090');
+  assert.equal(gameStatsTarget({ GAMESTATS_PROXY_TARGET: 'http://127.0.0.1:8080' }), 'http://127.0.0.1:8080');
+});
+
+test('el panel y el envío manejan errores vacíos o HTML del proxy sin errores de JSON', async () => {
+  for (const [status, body] of [[500, ''], [502, '<html>Bad gateway</html>'], [503, '']]) {
+    const fetchImpl = async () => new Response(body, { status });
+    await assert.rejects(fetchStats({ fetchImpl }), new RegExp(`GameStats no está disponible \\(HTTP ${status}\\)`));
+    const adapter = new EventAdapter({ endpoint: '/api/events', fetchImpl });
+    const storage = memoryStorage();
+    const delivery = new EventDelivery(adapter, { storage, readMatches: () => [{ id: 'P1', events: [{ eventId: 'E1' }] }] });
+    await assert.rejects(delivery.sync(), /GameStats no está disponible/);
+    assert.equal(storage.getItem('gameconsole:delivered:P1'), null);
+  }
+  await assert.rejects(fetchStats({ fetchImpl: async () => new Response('', { status: 200 }) }), /respuesta vacía/);
+  await assert.rejects(fetchStats({ fetchImpl: async () => Response.json(null) }), /formato de estadísticas desconocido/);
+});
+
+test('una cola vacía no afirma que el servicio está conectado', async () => {
+  const adapter = new EventAdapter({ endpoint: '/api/events', fetchImpl: () => assert.fail('No hay eventos que enviar') });
+  const delivery = new EventDelivery(adapter, { storage: memoryStorage(), readMatches: () => [] });
+  const result = await delivery.sync();
+  assert.equal(result.status, 'idle');
+  assert.equal(result.message, 'No hay eventos pendientes de envío.');
 });

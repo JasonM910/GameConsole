@@ -29,6 +29,17 @@ El volumen `gamestats-data` conserva `/data/partidas.json` y `/data/resultados.j
 
 El Compose original de `GameStats` sigue ejecutando la simulación y el análisis por archivos de manera independiente. No comparte el volumen de la API ni sobrescribe los archivos históricos.
 
+## Desarrollo con Vite y GameStats
+
+Con Node.js 22 y Docker Desktop instalados, desde `GameConsole`:
+
+```powershell
+npm ci
+npm run dev
+```
+
+El comando comprueba GameStats, inicia Docker Desktop si es necesario y levanta los servicios con Compose antes de abrir Vite. El proxy utiliza el puerto publicado 8088, manteniendo Go y Scala internos y el mismo histórico persistente. `npm run services` permite levantar los servicios por separado. `npm run dev:ui` abre únicamente Vite, sin iniciar dependencias; si GameStats no está disponible se mostrará un mensaje de conexión y se conservarán los eventos pendientes.
+
 ## Desarrollo sin Docker
 
 Se necesitan Node.js 22, Go 1.22 o posterior, Java 21 y sbt. Abrir tres terminales:
@@ -42,10 +53,11 @@ go run . -serve
 
 # Terminal 3: GameConsole
 npm ci
+$env:GAMESTATS_PROXY_TARGET = 'http://127.0.0.1:8080'
 npm run dev
 ```
 
-Vite muestra su dirección local y redirige `/api` a `http://127.0.0.1:8080`. El servidor Scala utiliza el puerto 8081. Las rutas públicas usan el mismo origen del navegador en desarrollo y en Docker.
+Vite muestra su dirección local y, con esa variable explícita, redirige `/api` a Go en `http://127.0.0.1:8080`. El servidor Scala utiliza el puerto 8081. Con un destino explícito distinto al de Compose, `npm run dev` verifica su disponibilidad y avisa si falta iniciar Go o Scala.
 
 ## Juegos
 
@@ -73,7 +85,7 @@ Copiar `.env.example` a `.env` si se requieren otros valores:
 | --- | --- | --- |
 | `VITE_GAMESTATS_URL` | `/api/events` | Endpoint público de eventos. Vacío desactiva el envío. |
 | `VITE_GAMESTATS_STATS_URL` | `/api/stats` | Endpoint público de consulta. |
-| `GAMESTATS_PROXY_TARGET` | `http://127.0.0.1:8080` | Destino de Go para el proxy de desarrollo. |
+| `GAMESTATS_PROXY_TARGET` | `http://127.0.0.1:8088` | Destino publicado de Compose para Vite. Usar 8080 si se ejecuta Go sin Docker. |
 | `GAMECONSOLE_PORT` | `8088` | Puerto publicado por Compose. |
 
 Las variables `VITE_*` se incorporan durante la compilación. La imagen Docker usa las rutas relativas predeterminadas; Nginx conoce los nombres internos de Compose. Las variables de Go y Scala están documentadas en `../GameStats/README.md`.

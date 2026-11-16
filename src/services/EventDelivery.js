@@ -15,6 +15,7 @@ export class EventDelivery {
   }
   async flush() {
     if (!this.adapter.endpoint) return { status: 'pending', message: 'Sin API configurada; los eventos siguen guardados.' };
+    let sent = false;
     for (const match of this.readMatches()) {
       const key = `gameconsole:delivered:${match.id}`;
       const acknowledged = new Set(JSON.parse(this.storage.getItem(key) ?? '[]'));
@@ -24,8 +25,11 @@ export class EventDelivery {
         if (result.status !== 'sent') return result;
         result.eventIds.forEach((id) => acknowledged.add(id));
         this.storage.setItem(key, JSON.stringify([...acknowledged]));
+        sent = true;
       }
     }
-    return { status: 'sent', message: 'Eventos confirmados por GameStats. Las estadísticas están disponibles.' };
+    return sent
+      ? { status: 'sent', message: 'Eventos confirmados por GameStats.' }
+      : { status: 'idle', message: 'No hay eventos pendientes de envío.' };
   }
 }

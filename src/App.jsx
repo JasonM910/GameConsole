@@ -40,7 +40,7 @@ function formatDate(timestamp) {
 
 export default function App() {
   const [storage, setStorage] = useState(initialStorage);
-  const [selectedGameId, setSelectedGameId] = useState('CHESS');
+  const [selectedGameId, setSelectedGameId] = useState(null);
   const [activeMatchId, setActiveMatchId] = useState(null);
   const [showStats, setShowStats] = useState(false);
   const [delivery, setDelivery] = useState({
@@ -93,6 +93,7 @@ export default function App() {
   }, [refreshMatches]);
 
   function startMatch(gameId = selectedGameId) {
+    if (!gameId) return;
     try {
       if (gameId === 'PACMAN' || gameId === 'MEMORY') {
         const match = gameId === 'PACMAN' ? new PacmanMatch() : new MemoryMatch();

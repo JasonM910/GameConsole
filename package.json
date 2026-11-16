@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:ui": "vite",
+    "services": "docker compose up --build -d --wait --wait-timeout 120",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
