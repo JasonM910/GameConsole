@@ -1,3 +1,8 @@
+import PacmanIcon from './icons/PacmanIcon.jsx';
+import MemoryIcon from './icons/MemoryIcon.jsx';
+
+const SVG_ICON_CLASSES = 'pointer-events-none absolute right-7 top-[42px] h-[72px] w-[72px] transition-transform duration-200 motion-safe:group-hover:-translate-y-[3px] motion-safe:group-hover:rotate-[5deg] max-[660px]:right-[23px] max-[660px]:top-[29px] max-[660px]:h-16 max-[660px]:w-16';
+
 const GAMES = [
   {
     id: 'CHESS',
@@ -14,7 +19,7 @@ const GAMES = [
     tagline: 'Arcade clásico',
     description: 'Recorre el laberinto y suma puntos.',
     accent: 'pacman',
-    icon: '◉',
+    Icon: PacmanIcon,
     available: true,
   },
   {
@@ -23,7 +28,7 @@ const GAMES = [
     tagline: 'Encuentra las parejas',
     description: 'Voltea cartas y pon a prueba tu memoria.',
     accent: 'memory',
-    icon: '▣',
+    Icon: MemoryIcon,
     available: true,
   },
 ];
@@ -45,7 +50,7 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
         {GAMES.map((game, index) => (
           <button
             aria-pressed={selectedGameId === game.id}
-            className={`game-card game-card--${game.accent} motion-safe:animate-fade-up${selectedGameId === game.id ? ' is-selected' : ''}`}
+            className={`group game-card game-card--${game.accent} motion-safe:animate-fade-up${selectedGameId === game.id ? ' is-selected' : ''}`}
             key={game.id}
             onClick={() => onSelect(game.id)}
             style={{ animationDelay: `${index * 90}ms` }}
@@ -57,7 +62,11 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
                 {game.available ? 'LISTO PARA JUGAR' : 'PRÓXIMAMENTE'}
               </span>
             </div>
-            <span aria-hidden="true" className="game-card__icon">{game.icon}</span>
+            {game.Icon ? (
+              <span aria-hidden="true" className={SVG_ICON_CLASSES}><game.Icon /></span>
+            ) : (
+              <span aria-hidden="true" className="game-card__icon">{game.icon}</span>
+            )}
             <div className="game-card__copy">
               <span className="game-card__tagline">{game.tagline}</span>
               <h3>{game.name}</h3>
