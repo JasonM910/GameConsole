@@ -50,6 +50,15 @@ test('sin dirección configurada no inicia una solicitud ni simula entrega', asy
   assert.equal(result.status, 'pending');
 });
 
+test('Buscaminas respeta los datos del contrato Go, incluidos los booleanos de las banderas', () => {
+  const adapter = new EventAdapter();
+  const create = (type, data) => adapter.createEvent({ gameId: 'MINESWEEPER', matchId: 'mine-1', playerId: 'PLAYER_ONE', type, data });
+  assert.equal(create('FLAG_PLACED', { row: 0, column: 1, correct: false }).data.correct, false);
+  assert.throws(() => create('FLAG_PLACED', { row: 0, column: 1, correct: 'false' }), /tipo admitido/);
+  assert.throws(() => create('CELL_REVEALED', { row: -1, column: 1, adjacentMines: 2 }), /tipo admitido/);
+  assert.throws(() => create('FLAG_REMOVED', { row: 0, column: 1, correct: false }), /exactamente/);
+});
+
 test('usa la dirección configurada y envía el formato de lote JSON', async () => {
   let request;
   const adapter = new EventAdapter({

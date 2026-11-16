@@ -1,6 +1,8 @@
 ﻿# GameConsole
 
-Consola arcade sobre la estructura existente de React 18, Vite, JavaScript y Tailwind CSS. Incluye Ajedrez local, Pac-Man, Memoria y un panel conectado con GameStats. Las reglas viven en clases, las vistas en componentes React y los eventos/persistencia en servicios.
+Consola arcade sobre la estructura existente de React 18, Vite, JavaScript y Tailwind CSS. Incluye Ajedrez local, Pac-Man, Memoria, Buscaminas y un panel conectado con GameStats. Las reglas viven en clases, las vistas en componentes React y los eventos/persistencia en servicios.
+
+El catálogo actual ofrece cuatro juegos. El enunciado académico solicita exactamente tres; se debe acordar cuáles presentar en la entrega final.
 
 ## Ejecución integrada con Docker
 
@@ -64,12 +66,15 @@ Vite muestra su dirección local y, con esa variable explícita, redirige `/api`
 - **Ajedrez:** mantiene `chess.js`, dos jugadores, movimientos legales, promoción, jaque, mate, tablas, abandono y restauración de partidas. El oponente Prolog sigue pendiente; no se simula una IA.
 - **Pac-Man:** iniciar con el botón, mover con flechas/WASD o controles táctiles, pausar con espacio o botón. Tiene tres vidas, fantasmas con persecución/dispersión y huida bajo poder, puntos, frutas y esferas de poder de seis segundos. Se gana al limpiar los dos niveles; se pierde al agotar las vidas. Puntos: normal 10, poder 50, fruta 100, fantasma 200. El segundo nivel acelera los fantasmas.
 - **Memoria:** ocho parejas en un tablero 4×4, límite de 180 segundos de juego activo, dos cartas por intento y espera de 800 ms tras un fallo. Encontrar una pareja deja disponibles las demás cartas. Termina al encontrar todas o al agotar el tiempo.
+- **Buscaminas:** tablero de 9×9 con diez minas. Pulsar «Iniciar» y abrir una casilla; el primer clic es seguro y abre una zona vacía cuando hay espacio. Las casillas vacías descubren automáticamente sus vecinas. Después del primer clic se pueden colocar o retirar hasta diez banderas con clic derecho o con el modo «Marcar banderas» en pantallas táctiles. Se gana al abrir las 71 casillas sin minas, sin necesidad de marcar todas las minas; pisar una mina termina en derrota. Al finalizar se muestran las minas y las banderas incorrectas.
 
-Pac-Man y Memoria se pausan al cambiar de ventana o abandonar la vista. Al restaurar una partida se debe pulsar «Continuar». El reloj avanza únicamente mientras se juega. Reiniciar finaliza la partida anterior como derrota si estaba iniciada y crea otro UUID, conservando su historia.
+Pac-Man, Memoria y Buscaminas se pausan al cambiar de ventana o abandonar la vista. Al restaurar una partida se debe pulsar «Continuar». El reloj avanza únicamente mientras se juega. Reiniciar finaliza la partida anterior como derrota si estaba iniciada y crea otro UUID, conservando su historia.
 
 ## Eventos y estadísticas
 
 `EventAdapter` mantiene el contrato exacto de GameStats: `eventId`, `timestamp` RFC3339, `gameId`, `gameVersion`, `matchId`, `playerId`, `type`, `data`. No se agregan tipos de movimiento o pausa que no existan en el catálogo de GameStats. Los hechos de los modelos nuevos se convierten al contrato mediante `gameEvents.js`.
+
+Buscaminas usa `gameId: MINESWEEPER` y los eventos existentes `MATCH_STARTED`, `CELL_REVEALED`, `FLAG_PLACED`, `FLAG_REMOVED`, `MINE_TRIGGERED`, `BOARD_COMPLETED` y `MATCH_FINISHED`. Las coordenadas de eventos comienzan en cero. `MinesweeperBoard` administra las casillas, minas, vecinos y apertura en cadena; `MinesweeperMatch` controla el ciclo de vida y emite los hechos. Scala calcula las casillas reveladas, precisión de banderas y el patrón de bandera incorrecta corregida; React presenta esos resultados.
 
 La partida se guarda antes de enviarla. `EventDelivery` transmite lotes ordenados de hasta 100 eventos, conserva los IDs al reintentar y registra confirmaciones aparte de las posiciones del juego. Reintenta al abrir la consola, recuperar conexión y cada 15 segundos. Un fallo HTTP o confirmación incompleta conserva el lote pendiente. La API acepta reenvíos idénticos sin duplicar estadísticas y rechaza IDs reutilizados con otros datos.
 
@@ -103,9 +108,9 @@ $env:GAMESTATS_BASE_URL = 'http://127.0.0.1:8088'
 npm run test:integration
 ```
 
-Las pruebas de navegador cubren movimiento/pausa/restauración/reinicio de Pac-Man, todas las parejas de Memoria, estados del panel y regresión de Ajedrez. Para usar Edge instalado: `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. `PLAYWRIGHT_BASE_URL` permite probar el sitio servido por Docker en lugar de iniciar Vite.
+Las pruebas de navegador cubren movimiento/pausa/restauración/reinicio de Pac-Man, todas las parejas de Memoria, banderas/pausa/restauración/reinicio/victoria/derrota de Buscaminas, estados del panel y regresión de Ajedrez. Para usar Edge instalado: `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. `PLAYWRIGHT_BASE_URL` permite probar el sitio servido por Docker en lugar de iniciar Vite.
 
-El smoke test genera partidas mediante las clases reales, envía sus eventos dos veces y comprueba métricas Scala, resultados y filtros. Para verificar persistencia:
+El smoke test genera cuatro partidas mediante las clases reales, envía sus eventos dos veces y comprueba métricas Scala, resultados y filtros. Para Buscaminas verifica casillas reveladas, precisión de banderas y el patrón `FLAG_CORRECTED`. Para verificar persistencia:
 
 ```powershell
 $env:INTEGRATION_RECEIPT = Join-Path $env:TEMP 'gameconsole-integration.json'
@@ -115,7 +120,7 @@ docker compose up -d --wait
 node scripts/smoke-integration.mjs --verify
 ```
 
-Para incluir la prueba de navegador con recepción real de eventos y consulta de métricas Scala:
+Para incluir las pruebas de navegador de Memoria y Buscaminas con recepción real de eventos y consulta de métricas Scala:
 
 ```powershell
 $env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:8088'
@@ -123,7 +128,7 @@ $env:GAMESTATS_LIVE = '1'
 npm run test:e2e
 ```
 
-Esta prueba agrega tres partidas de validación al histórico; usar un proyecto Compose separado (`docker compose -p gameconsole-check ...`) para aislarlas de partidas personales.
+El smoke test agrega cuatro partidas y las pruebas de navegador reales agregan otras dos al histórico; usar un proyecto Compose separado (`docker compose -p gameconsole-check ...`) para aislarlas de partidas personales.
 
 ## CI/CD y deployment
 

@@ -34,7 +34,16 @@ const MEMORY_FIELDS = {
   TIME_EXPIRED: { pairsFound: 'nonNegativeInteger' },
   MATCH_FINISHED: { result: 'memoryResult', durationSeconds: 'nonNegativeInteger' },
 };
-const SCHEMAS = { CHESS: CHESS_FIELDS, PACMAN: PACMAN_FIELDS, MEMORY: MEMORY_FIELDS };
+const MINESWEEPER_FIELDS = {
+  MATCH_STARTED: { rows: 'positiveInteger', columns: 'positiveInteger', mineCount: 'nonNegativeInteger', difficulty: 'text' },
+  MATCH_FINISHED: { result: 'text', durationSeconds: 'nonNegativeInteger' },
+  CELL_REVEALED: { row: 'nonNegativeInteger', column: 'nonNegativeInteger', adjacentMines: 'nonNegativeInteger' },
+  FLAG_PLACED: { row: 'nonNegativeInteger', column: 'nonNegativeInteger', correct: 'boolean' },
+  FLAG_REMOVED: { row: 'nonNegativeInteger', column: 'nonNegativeInteger' },
+  MINE_TRIGGERED: { row: 'nonNegativeInteger', column: 'nonNegativeInteger' },
+  BOARD_COMPLETED: { difficulty: 'text', durationSeconds: 'nonNegativeInteger' },
+};
+const SCHEMAS = { CHESS: CHESS_FIELDS, PACMAN: PACMAN_FIELDS, MEMORY: MEMORY_FIELDS, MINESWEEPER: MINESWEEPER_FIELDS };
 const PIECES = new Set(['PAWN', 'KNIGHT', 'BISHOP', 'ROOK', 'QUEEN', 'KING']);
 const RESULTS = new Set(['WIN', 'LOSS', 'DRAW']);
 const SQUARE = /^[a-h][1-8]$/;
@@ -45,6 +54,8 @@ function isNonEmptyText(value) {
 
 function validValue(kind, value) {
   switch (kind) {
+    case 'boolean':
+      return typeof value === 'boolean';
     case 'memoryResult':
       return value === 'WIN' || value === 'LOSS';
     case 'side':

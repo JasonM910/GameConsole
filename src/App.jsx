@@ -2,14 +2,22 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChessGame from './components/ChessGame.jsx';
 import PacmanGame from './components/PacmanGame.jsx';
 import MemoryGame from './components/MemoryGame.jsx';
+import MinesweeperGame from './components/MinesweeperGame.jsx';
 import StatisticsPanel from './components/StatisticsPanel.jsx';
 import GameCatalog from './components/GameCatalog.jsx';
 import { ChessMatch } from './games/chess/ChessMatch.js';
 import { PacmanMatch } from './games/pacman/PacmanMatch.js';
 import { MemoryMatch } from './games/memory/MemoryMatch.js';
+import { MinesweeperMatch } from './games/minesweeper/MinesweeperMatch.js';
 import { EventAdapter } from './services/EventAdapter.js';
 import { EventDelivery } from './services/EventDelivery.js';
 import { loadMatches, saveMatch } from './services/matchStorage.js';
+
+const SINGLE_PLAYER_GAMES = {
+  PACMAN: { Model: PacmanMatch, View: PacmanGame },
+  MEMORY: { Model: MemoryMatch, View: MemoryGame },
+  MINESWEEPER: { Model: MinesweeperMatch, View: MinesweeperGame },
+};
 
 function initialStorage() {
   try {
@@ -95,8 +103,8 @@ export default function App() {
   function startMatch(gameId = selectedGameId) {
     if (!gameId) return;
     try {
-      if (gameId === 'PACMAN' || gameId === 'MEMORY') {
-        const match = gameId === 'PACMAN' ? new PacmanMatch() : new MemoryMatch();
+      if (SINGLE_PLAYER_GAMES[gameId]) {
+        const match = new SINGLE_PLAYER_GAMES[gameId].Model();
         saveMatch(match.toJSON());
         refreshMatches();
         setActiveMatchId(match.id);
@@ -141,8 +149,8 @@ export default function App() {
     );
   }
 
-  if (activeRecord?.gameId === 'PACMAN' || activeRecord?.gameId === 'MEMORY') {
-    const Game = activeRecord.gameId === 'PACMAN' ? PacmanGame : MemoryGame;
+  if (SINGLE_PLAYER_GAMES[activeRecord?.gameId]) {
+    const Game = SINGLE_PLAYER_GAMES[activeRecord.gameId].View;
     return <Game key={activeRecord.id} record={activeRecord} adapter={adapter}
       delivery={delivery} onSave={persistMatch} onEvents={publishEvents}
       onBack={() => setActiveMatchId(null)} onRestart={startMatch} />;
@@ -173,7 +181,7 @@ export default function App() {
             Elige una partida, reta tu estrategia y descubre todo lo que puedes lograr.
             Tu aventura comienza aquí.
           </p>
-          <div className="hero-footnote"><span>01</span><i /> TRES JUEGOS. UN SOLO LUGAR.</div>
+          <div className="hero-footnote"><span>01</span><i /> CUATRO JUEGOS. UN SOLO LUGAR.</div>
         </div>
         <div aria-hidden="true" className="hero-art motion-safe:animate-arcade-float">
           <div className="hero-art__ring hero-art__ring--outer" />
@@ -207,9 +215,9 @@ export default function App() {
             <div className="saved-grid">
               {matches.map((match) => (
                 <button className="saved-card" key={match.id} onClick={() => setActiveMatchId(match.id)} type="button">
-                  <span className="saved-card__icon">{match.gameId === 'CHESS' ? '♞' : match.gameId === 'PACMAN' ? '◉' : '▣'}</span>
+                  <span className="saved-card__icon">{{ CHESS: '♞', PACMAN: '◉', MEMORY: '▣', MINESWEEPER: '⚑' }[match.gameId]}</span>
                   <span className="saved-card__main">
-                    <strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria' }[match.gameId]}</strong>
+                    <strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria', MINESWEEPER: 'Buscaminas' }[match.gameId]}</strong>
                     <small>{match.id.slice(0, 8).toUpperCase()} · {formatDate(match.createdAt)}</small>
                   </span>
                   <span className={`saved-card__status${match.status === 'finished' ? ' is-done' : ''}`}>

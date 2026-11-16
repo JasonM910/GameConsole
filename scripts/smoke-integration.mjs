@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { PacmanMatch } from '../src/games/pacman/PacmanMatch.js';
 import { MemoryMatch } from '../src/games/memory/MemoryMatch.js';
 import { ChessMatch } from '../src/games/chess/ChessMatch.js';
+import { MinesweeperMatch } from '../src/games/minesweeper/MinesweeperMatch.js';
 import { EventAdapter } from '../src/services/EventAdapter.js';
 import { collectGameEvents } from '../src/services/gameEvents.js';
 
@@ -37,7 +38,14 @@ function fixtures() {
     if (move.checkmate) emit(move.playerId, 'CHECKMATE', { ply: move.ply });
   }
   for (const color of ['w', 'b']) emit(chess.playerIdFor(color), 'MATCH_FINISHED', { result: chess.result === color ? 'WIN' : 'LOSS', durationSeconds: chess.elapsedSeconds() });
-  return [pacman, memory, chess].map((match) => ({ id: match.id, gameId: match.gameId, events: match.events }));
+  const minesweeper = new MinesweeperMatch({ rows: 4, columns: 4, mineCount: 2,
+    minePositions: [{ row: 0, column: 0 }, { row: 3, column: 3 }] });
+  minesweeper.start(); minesweeper.tick(2000); minesweeper.reveal(1, 1);
+  minesweeper.toggleFlag(0, 1); minesweeper.toggleFlag(0, 1); minesweeper.toggleFlag(0, 0);
+  for (const cell of minesweeper.board.cells.filter((cell) => !cell.mine)) minesweeper.reveal(cell.row, cell.column);
+  assert.equal(minesweeper.result, 'WIN');
+  collectGameEvents(minesweeper, adapter);
+  return [pacman, memory, chess, minesweeper].map((match) => ({ id: match.id, gameId: match.gameId, events: match.events }));
 }
 
 await request('/health');
@@ -65,7 +73,15 @@ for (const record of records) {
   assert.equal(match.result, record.gameId === 'CHESS' ? 'DECIDED' : 'WIN');
   if (record.gameId === 'PACMAN') assert.equal(result.metrics.find((metric) => metric.matchId === record.id && metric.metric === 'totalPoints').value, 60);
   if (record.gameId === 'MEMORY') assert.equal(result.metrics.find((metric) => metric.matchId === record.id && metric.metric === 'pairsFound').value, 8);
+  if (record.gameId === 'MINESWEEPER') {
+    assert.equal(result.metrics.find((metric) => metric.matchId === record.id && metric.metric === 'cellsRevealed').value, 14);
+    assert.equal(result.metrics.find((metric) => metric.matchId === record.id && metric.metric === 'flagAccuracyPercent').value, 50);
+    assert.ok(result.patterns.some((pattern) => pattern.matchId === record.id && pattern.pattern === 'FLAG_CORRECTED'));
+  }
 }
 const filtered = await request('/api/stats?gameId=MEMORY&playerId=PLAYER_ONE');
 assert.ok(filtered.matches.every((match) => match.gameId === 'MEMORY'));
+const minesFiltered = await request('/api/stats?gameId=MINESWEEPER&playerId=PLAYER_ONE');
+assert.ok(minesFiltered.matches.some((match) => match.matchId === records.find((record) => record.gameId === 'MINESWEEPER')?.id));
+assert.ok(minesFiltered.matches.every((match) => match.gameId === 'MINESWEEPER'));
 console.log(`Integración correcta: ${records.length} partidas reales, eventos idempotentes, métricas Scala y filtros${process.argv.includes('--verify') ? ', persistencia tras reinicio' : ''}.`);

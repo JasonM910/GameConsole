@@ -296,8 +296,8 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                   onClick={() => onOpenMatch(saved.id)}
                   type="button"
                 >
-                  <span className="session-icon">{saved.gameId === 'CHESS' ? '♞' : saved.gameId === 'PACMAN' ? '◉' : '▣'}</span>
-                  <span className="session-item__text"><strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria' }[saved.gameId]}</strong><small>{saved.id.slice(0, 8).toUpperCase()}</small></span>
+                  <span className="session-icon">{{ CHESS: '♞', PACMAN: '◉', MEMORY: '▣', MINESWEEPER: '⚑' }[saved.gameId]}</span>
+                  <span className="session-item__text"><strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria', MINESWEEPER: 'Buscaminas' }[saved.gameId]}</strong><small>{saved.id.slice(0, 8).toUpperCase()}</small></span>
                   <span className={`session-status${saved.status === 'finished' ? ' is-done' : ''}`} />
                 </button>
               ))}

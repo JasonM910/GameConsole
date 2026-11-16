@@ -1,5 +1,6 @@
 import PacmanIcon from './icons/PacmanIcon.jsx';
 import MemoryIcon from './icons/MemoryIcon.jsx';
+import MinesweeperIcon from './icons/MinesweeperIcon.jsx';
 
 const SVG_ICON_CLASSES = 'pointer-events-none absolute right-7 top-[42px] h-[72px] w-[72px] transition-transform duration-200 motion-safe:group-hover:-translate-y-[3px] motion-safe:group-hover:rotate-[5deg] max-[660px]:right-[23px] max-[660px]:top-[29px] max-[660px]:h-16 max-[660px]:w-16';
 
@@ -31,6 +32,15 @@ const GAMES = [
     Icon: MemoryIcon,
     available: true,
   },
+  {
+    id: 'MINESWEEPER',
+    name: 'Buscaminas',
+    tagline: 'Lógica y exploración',
+    description: 'Descubre las pistas y evita las minas.',
+    accent: 'minesweeper',
+    Icon: MinesweeperIcon,
+    available: true,
+  },
 ];
 
 export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
@@ -43,7 +53,7 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
           <p className="eyebrow">Tu próxima partida</p>
           <h2 id="catalog-title">Elige tu juego</h2>
         </div>
-        <span className="catalog-count">03 EXPERIENCIAS</span>
+        <span className="catalog-count">{String(GAMES.length).padStart(2, '0')} EXPERIENCIAS</span>
       </div>
 
       <div className="game-grid">
