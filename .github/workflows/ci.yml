@@ -7,7 +7,7 @@ on:
     inputs:
       gamestats_ref:
         description: Rama o commit compatible de GameStats
-        default: main
+        default: master
         required: true
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: ${{ vars.GAMESTATS_REPOSITORY || 'JasonM910/GameStats' }}
-          ref: ${{ inputs.gamestats_ref || vars.GAMESTATS_REF || 'main' }}
+          ref: ${{ inputs.gamestats_ref || vars.GAMESTATS_REF || 'master' }}
           path: GameStats
       - uses: actions/setup-node@v6
         with:

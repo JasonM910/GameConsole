@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ChessGame from './components/ChessGame.jsx';
 import PacmanGame from './components/PacmanGame.jsx';
 import MemoryGame from './components/MemoryGame.jsx';
@@ -60,6 +60,10 @@ export default function App() {
   const deliveryRequest = useRef(0);
   const matches = storage.matches;
   const activeRecord = matches.find((match) => match.id === activeMatchId);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [activeMatchId, showStats]);
 
   const publishEvents = useCallback(async () => {
     const request = ++deliveryRequest.current;

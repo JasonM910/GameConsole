@@ -63,12 +63,14 @@ Vite muestra su dirección local y, con esa variable explícita, redirige `/api`
 
 ## Juegos
 
-- **Ajedrez:** mantiene `chess.js`, dos jugadores, movimientos legales, promoción, jaque, mate, tablas, abandono y restauración de partidas. El oponente Prolog sigue pendiente; no se simula una IA.
+- **Ajedrez:** mantiene `chess.js`, dos jugadores, movimientos legales, promoción, jaque, mate, tablas, abandono y restauración de partidas. El aviso sobre el tablero distingue jaque, jaque mate, tablas y abandono; resalta el rey amenazado, muestra la última jugada y anuncia al ganador. El resultado se conserva al restaurar la partida. El oponente Prolog sigue pendiente; no se simula una IA.
 - **Pac-Man:** iniciar con el botón, mover con flechas/WASD o controles táctiles, pausar con espacio o botón. Tiene tres vidas, fantasmas con persecución/dispersión y huida bajo poder, puntos, frutas y esferas de poder de seis segundos. Se gana al limpiar los dos niveles; se pierde al agotar las vidas. Puntos: normal 10, poder 50, fruta 100, fantasma 200. El segundo nivel acelera los fantasmas.
 - **Memoria:** ocho parejas en un tablero 4×4, límite de 180 segundos de juego activo, dos cartas por intento y espera de 800 ms tras un fallo. Encontrar una pareja deja disponibles las demás cartas. Termina al encontrar todas o al agotar el tiempo.
 - **Buscaminas:** tablero de 9×9 con diez minas. Pulsar «Iniciar» y abrir una casilla; el primer clic es seguro y abre una zona vacía cuando hay espacio. Las casillas vacías descubren automáticamente sus vecinas. Después del primer clic se pueden colocar o retirar hasta diez banderas con clic derecho o con el modo «Marcar banderas» en pantallas táctiles. Se gana al abrir las 71 casillas sin minas, sin necesidad de marcar todas las minas; pisar una mina termina en derrota. Al finalizar se muestran las minas y las banderas incorrectas.
 
 Pac-Man, Memoria y Buscaminas se pausan al cambiar de ventana o abandonar la vista. Al restaurar una partida se debe pulsar «Continuar». El reloj avanza únicamente mientras se juega. Reiniciar finaliza la partida anterior como derrota si estaba iniciada y crea otro UUID, conservando su historia.
+
+Los tableros se ajustan al ancho y a la altura de la ventana. Los controles principales y las métricas de los juegos individuales están sobre el tablero; las instrucciones y la información de sincronización son desplegables. En pantallas horizontales bajas, los controles se ubican al lado del juego. Al cambiar entre consola, partida y estadísticas se vuelve al inicio de la vista.
 
 ## Eventos y estadísticas
 
@@ -134,6 +136,6 @@ El smoke test agrega cuatro partidas y las pruebas de navegador reales agregan o
 
 `.github/workflows/ci.yml` instala dependencias, ejecuta pruebas de modelos y navegador, compila y publica `dist` como artefacto. Otro trabajo obtiene GameStats como repositorio hermano, construye las imágenes, ejecuta el smoke test integrado y comprueba persistencia tras reiniciar Go. Publica también la imagen web probada.
 
-Como son repositorios separados, configurar `GAMESTATS_REPOSITORY` (por defecto `JasonM910/GameStats`) y `GAMESTATS_REF` con la rama o commit que incluya la API. La ejecución manual permite escoger `gamestats_ref`. Ambos cambios deben publicarse en ramas compatibles antes de ejecutar esa integración en GitHub. El workflow de GameStats conserva la validación por archivos y añade una validación HTTP propia.
+Como son repositorios separados, configurar `GAMESTATS_REPOSITORY` (por defecto `JasonM910/GameStats`) y `GAMESTATS_REF` con la rama o commit que incluya la API. La rama predeterminada de GameStats es `master`, que también utiliza el workflow si no se configura otra referencia. La ejecución manual permite escoger `gamestats_ref`. Si ya existe una variable `GAMESTATS_REF` con valor `main`, corregirla a `master` o a un commit válido. Ambos cambios deben publicarse en ramas compatibles antes de ejecutar esa integración en GitHub. El workflow de GameStats conserva la validación por archivos y añade una validación HTTP propia.
 
 El deployment definido es Docker Compose en el equipo o servidor elegido, actualizando ambos repositorios y ejecutando `docker compose up --build -d --wait`. No se configura un servidor remoto ni credenciales que no existan en el proyecto. Para exposición pública se requiere configurar dominio/HTTPS y el control de acceso del entorno; la API actual es para la consola local y usa un único proceso escritor sobre JSON.

@@ -260,6 +260,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 /* Arcade cabinet palette, pixel edges and a restrained CRT screen texture. */
 :root {
   color-scheme: dark;
+  background: #0b0b16;
   --ink: #f5f0ff;
   --muted: #a39ab9;
   --green: #ccff33;
@@ -788,3 +789,233 @@ body::after {
 .minesweeper-cell[data-adjacent="3"] { color: #ff70ad; }
 .minesweeper-cell[data-adjacent="4"] { color: #c4a0ff; }
 .minesweeper-cell[data-adjacent="5"], .minesweeper-cell[data-adjacent="6"], .minesweeper-cell[data-adjacent="7"], .minesweeper-cell[data-adjacent="8"] { color: #ffdc69; }
+
+/* Keep play areas within the window; secondary information expands on demand. */
+.home-layout, .match-layout { min-height: 100svh; }
+.home-topbar, .match-topbar { height: 56px; padding-inline: 24px; }
+.home-topbar .button, .game-toolbar .button, .minesweeper-toolbar .button { margin-top: 0; }
+.hero { min-height: 0; padding-block: 22px 18px; }
+.hero h1 { font-size: clamp(23px, 2.6vw, 32px); line-height: 1.45; }
+.hero-description { margin-block: 12px; line-height: 1.5; }
+.hero .eyebrow { margin-bottom: 8px; }
+.hero-art { width: 310px; height: 180px; margin-right: 20px; }
+.hero-art__ring--outer { width: 270px; height: 170px; }
+.hero-art__ring--inner { width: 220px; height: 140px; }
+.hero-art__caption { bottom: 0; }
+.hero-art__cross { top: 0; }
+.hero-art__tile--front { width: 100px; height: 122px; font-size: 72px; }
+.hero-art__tile--back { width: 105px; height: 130px; font-size: 75px; }
+.home-content { padding-top: 8px; }
+.section-heading { margin-bottom: 12px; }
+.game-grid { gap: 12px; }
+.game-card { height: 172px; }
+.game-card p { min-height: 2.8em; line-height: 1.4; }
+.selection-bar { min-height: 62px; padding-block: 10px; }
+.saved-section { margin-block: 24px; }
+.empty-sessions { min-height: 70px; padding-block: 12px; }
+.page-footer { padding-block: 10px; }
+
+.match-content { grid-template-columns: minmax(0, 1fr) 250px; gap: 22px; max-width: 1120px; padding: 16px 20px 20px; align-items: start; }
+.match-heading { align-items: center; gap: 12px; margin-bottom: 10px; }
+.match-heading h1 { font-size: clamp(15px, 1.6vw, 19px); line-height: 1.5; }
+.match-heading .eyebrow { font-size: 9px; line-height: 1.4; margin-bottom: 4px; }
+.match-state { flex-shrink: 0; font-size: 9px; }
+.match-sidebar { gap: 10px; }
+.side-card { min-width: 0; padding: 14px; }
+.side-card__heading { margin-bottom: 10px; }
+.side-stat > span, .control-label { color: #b4aac9; font-size: 11px; }
+.arcade-help { font-size: 12px; line-height: 1.65; margin: 0; }
+details.side-card > summary { cursor: pointer; color: #d9d1ed; font-size: 12px; line-height: 1.5; }
+details.side-card > summary::marker { color: #41f5ff; }
+details.side-card > summary .session-count { display: inline-grid; margin-left: 6px; width: 21px; height: 21px; }
+.details-content { margin-top: 12px; }
+.details-content .integration-note { margin-bottom: 10px; }
+.details-content .integration-note p { font-size: 11px; }
+.details-content .integration-note strong { font-size: 11px; }
+.details-content .side-stat { padding-top: 0; margin-bottom: 12px; border-top: 0; }
+.details-content .session-list { max-height: 240px; }
+.connection-state { display: block; margin: 4px 0 0 14px; font-size: 10px; color: #a4c97b; }
+.connection-state.is-pending { color: #ffbd69; }
+
+.game-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.arcade-actions { gap: 8px; margin: 0; align-items: center; }
+.arcade-actions .button { min-height: 40px; padding: 10px 12px; font-size: 11px; }
+.game-clock { flex-shrink: 0; color: #b9adcc; font: 12px var(--mono); white-space: nowrap; }
+.game-metrics { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 12px; }
+.game-metrics .side-stat { gap: 4px; padding: 8px 10px; border: 1px solid #373252; border-radius: 4px; background: #151527; }
+.game-metrics .side-stat > span { font-size: 11px; line-height: 1.3; }
+.game-metrics .side-stat strong { color: #f5f0ff; font-size: 14px; line-height: 1.3; }
+.game-stage { display: flex; justify-content: center; align-items: flex-start; min-width: 0; }
+.game-status-banner { min-height: 36px; padding: 8px 12px; margin: 10px 0 0; color: #c4bdd4; font-size: 12px; }
+.game-status-banner.is-finished { border-color: #a4cc3c; color: #e1ff8d; }
+.pacman-board { width: min(100%, 650px, max(300px, calc((100svh - 355px) * 19 / 15))); padding: 8px; }
+.memory-board { width: min(100%, 520px, max(280px, calc(100svh - 315px))); gap: 10px; padding: 12px; }
+.memory-card { font-size: clamp(24px, 4vw, 44px); }
+.minesweeper-board { width: min(100%, 510px, max(280px, calc(100svh - 365px))); gap: 3px; padding: 8px; }
+.minesweeper-toolbar { gap: 8px; margin: 0 0 10px; }
+.minesweeper-toolbar .button { min-height: 36px; padding: 8px 12px; font-size: 11px; }
+.pacman-controls { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 10px; }
+.keyboard-help { display: none; color: #aaa1c2; font-size: 12px; }
+.direction-pad { gap: 4px; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 38px); margin: 0; }
+.direction-pad .button { margin: 0; padding: 0; font-size: 20px; line-height: 1; }
+.power-message { margin: 0; color: #ffdc69; font-size: 12px; }
+
+.chess-game { --chess-size: min(560px, max(260px, calc(100svh - 310px))); }
+.chess-game .match-content { grid-template-columns: minmax(0, calc(var(--chess-size) + 52px)) 250px; justify-content: center; }
+.chess-status { margin: 0 0 10px; min-height: 64px; padding: 10px 12px; }
+.chess-status strong { font-size: 14px; line-height: 1.4; }
+.chess-status > div > span { font-size: 11px; line-height: 1.4; color: #b9adcc; }
+.chess-status .turn-banner__icon { flex-shrink: 0; }
+.chess-status .move-count { font: 600 16px var(--mono); }
+.chess-status .move-count small { margin-top: 4px; font-size: 8px; white-space: nowrap; }
+.chess-status--check { border-color: #ffbd69; background: #322639; }
+.chess-status--check strong, .chess-status--check .turn-banner__icon { color: #ffdc69; }
+.chess-status--mate { border: 2px solid #ff70ad; background: linear-gradient(110deg, #3e233e, #201c36); }
+.chess-status--mate strong, .chess-status--mate .turn-banner__icon { color: #ffacd0; }
+.chess-status--finished { border-color: #41f5ff; }
+.match-state--check { border-color: #ffbd69; color: #ffdc69; background: #322639; }
+.match-state--mate { border-color: #ff70ad; color: #ffacd0; background: #3e233e; }
+.match-state--check span { background: #ffdc69; }
+.match-state--mate span { background: #ff70ad; }
+.chess-game .board-frame { padding: 8px; }
+.chess-game .player-strip { height: 26px; }
+.chess-game .player-strip > div { flex-direction: row; gap: 8px; align-items: center; }
+.chess-game .player-strip small { font-size: 8px; }
+.chess-game .avatar { width: 23px; height: 23px; font-size: 17px; }
+.chess-game .board-wrap { grid-template-columns: 12px minmax(0, 1fr) 12px; gap: 4px; margin-block: 6px; }
+.chess-game .piece { font-size: clamp(23px, calc(var(--chess-size) / 11), 52px); }
+.chess-game .square:disabled { cursor: default; }
+.square.is-threatened { background: #e97696; box-shadow: inset 0 0 0 3px #aa184e; }
+.square--dark .piece--b { -webkit-text-stroke: .75px #c3afd9; text-shadow: 0 2px 0 #171327; }
+.chess-controls .control-label { margin-top: 0; }
+.chess-controls .button { margin-top: 10px; min-height: 38px; }
+.chess-controls .arcade-help { margin-top: 6px; }
+.statistics-panel { padding-block: 24px; }
+.statistics-panel .side-stat { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 12px; }
+.statistics-panel .side-stat strong { flex-shrink: 0; text-align: right; }
+.stats-filter-field { display: grid; gap: 8px; min-width: 0; }
+.stats-filter-field label { display: block; }
+
+@media (min-width: 1100px) {
+  .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .game-card h3 { font-size: 14px; }
+  .game-card .game-card__copy { max-width: 100%; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .direction-pad { display: none; }
+  .keyboard-help { display: inline; }
+}
+@media (pointer: coarse) {
+  .arcade-game--pacman .pacman-board { width: min(100%, 650px, max(300px, calc((100svh - 420px) * 19 / 15))); }
+}
+@media (max-width: 900px) {
+  .match-content, .chess-game .match-content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 700px; padding: 14px 16px 18px; }
+  .match-sidebar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .chess-game .board-panel { width: min(100%, calc(var(--chess-size) + 52px)); justify-self: center; }
+  .chess-controls { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 6px 14px; }
+  .chess-controls .side-card__heading { display: none; }
+  .chess-controls .control-label { grid-column: 1; margin: 0; }
+  .chess-controls select { grid-column: 1; }
+  .chess-controls .button { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+  .chess-controls .arcade-help, .chess-controls .form-error { grid-column: 1 / -1; }
+  .hero-art { margin-right: 0; width: 250px; }
+}
+@media (max-width: 660px) {
+  .home-topbar, .match-topbar { height: 52px; padding-inline: 14px; }
+  .brand, .match-brand { font-size: 11px; gap: 7px; }
+  .brand-mark { width: 26px; height: 26px; font-size: 16px; }
+  .home-topbar .profile-chip { display: none; }
+  .home-topbar .button { min-height: 36px; font-size: 9px; padding-inline: 9px; }
+  .match-id { font-size: 8px; }
+  .hero { padding: 24px 16px 18px; }
+  .hero h1 { font-size: clamp(19px, 5.3vw, 26px); }
+  .hero-description { max-width: 290px; font-size: 12px; }
+  .hero-art { top: 10px; right: -75px; height: 170px; opacity: .16; }
+  .hero-footnote { font-size: 8px; gap: 6px; }
+  .home-content { padding: 8px 14px 0; }
+  .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .game-card { height: 148px; padding: 12px; }
+  .game-card .game-card__icon { top: 37px; right: 12px; font-size: 45px; }
+  .game-card > span[aria-hidden="true"] { top: 35px; right: 12px; width: 44px; height: 44px; }
+  .game-card__copy { max-width: 100%; }
+  .game-card h3 { font-size: clamp(10px, 2.9vw, 13px); }
+  .game-card__tagline { font-size: 8px; }
+  .game-card p { display: none; }
+  .game-status { font-size: 6px; padding: 3px 4px; }
+  .selection-bar { gap: 10px; }
+  .selection-copy strong { font-size: 12px; line-height: 1.5; }
+  .selection-copy span:not(.selection-dot) { font-size: 10px; line-height: 1.5; }
+  .match-content, .chess-game .match-content { padding: 12px; gap: 10px; }
+  .match-heading h1 { font-size: 15px; }
+  .match-heading .eyebrow { font-size: 8px; }
+  .game-toolbar { gap: 6px; }
+  .arcade-actions { gap: 6px; }
+  .arcade-actions .button { padding-inline: 9px; font-size: 10px; }
+  .game-clock { font-size: 10px; }
+  .game-metrics { gap: 5px; margin-bottom: 10px; }
+  .game-metrics .side-stat { padding: 7px; }
+  .game-metrics .side-stat > span { font-size: 10px; }
+  .game-metrics .side-stat strong { font-size: 12px; }
+  .pacman-board { padding: 6px; }
+  .memory-board { gap: 7px; padding: 10px; }
+  .minesweeper-toolbar .button { font-size: 10px; padding-inline: 9px; }
+  .pacman-controls { flex-wrap: wrap; gap: 8px; }
+  .keyboard-help { display: none; }
+  .direction-pad { display: grid; }
+  .chess-status { min-height: 64px; gap: 8px; padding: 8px; }
+  .chess-status strong { font-size: 13px; }
+  .chess-status > div > span { font-size: 10px; }
+  .chess-status .move-count { font-size: 13px; }
+  .chess-game .player-strip small { display: none; }
+  .chess-game .piece { font-size: clamp(24px, 9vw, 40px); }
+  .stats-filter-field { width: 100%; }
+  .stats-filters input, .stats-filters select { width: 100%; min-width: 0; }
+  .statistics-panel .section-heading { align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+}
+@media (max-width: 360px) {
+  .match-id { display: none; }
+  .game-toolbar { flex-wrap: wrap; }
+  .game-clock { margin-left: auto; }
+  .game-metrics .side-stat { padding-inline: 5px; }
+}
+@media (max-height: 500px) and (min-width: 661px) {
+  .match-topbar { height: 48px; }
+  .match-content, .chess-game .match-content { grid-template-columns: minmax(0, 1fr) 230px; max-width: 980px; padding-block: 10px; gap: 8px 16px; }
+  .arcade-game .board-panel, .chess-game .board-panel { display: contents; }
+  .arcade-game .match-heading { grid-column: 1 / -1; grid-row: 1; margin: 0; }
+  .arcade-game .game-stage { grid-column: 1; grid-row: 2 / span 6; align-self: start; }
+  .arcade-game .game-toolbar { grid-column: 2; grid-row: 2; flex-wrap: wrap; margin: 0; }
+  .arcade-game .game-toolbar { display: block; position: relative; }
+  .arcade-game .arcade-actions { display: grid; grid-template-columns: 70px 1fr; }
+  .arcade-game .arcade-actions .button { font-size: 10px; padding: 8px; height: 100%; }
+  .arcade-game .game-clock { position: absolute; top: -36px; right: 70px; font-size: 10px; }
+  .arcade-game .game-metrics { grid-column: 2; grid-row: 3; grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+  .arcade-game .game-metrics .side-stat { padding: 6px; }
+  .arcade-game .game-metrics .side-stat > span { font-size: 10px; line-height: 1.2; }
+  .arcade-game .game-metrics .side-stat strong { font-size: 12px; }
+  .arcade-game--memory .game-metrics, .arcade-game--minesweeper .game-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .arcade-game .minesweeper-toolbar { grid-column: 2; grid-row: 4; margin: 0; }
+  .arcade-game .minesweeper-toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .arcade-game .minesweeper-toolbar .button { font-size: 9px; padding: 6px; }
+  .arcade-game .game-status-banner { grid-column: 2; grid-row: 5; margin: 0; }
+  .arcade-game .pacman-controls { grid-column: 2; grid-row: 6; margin: 0; }
+  .arcade-game .direction-pad { grid-template-columns: repeat(4, 40px); grid-template-rows: 38px; }
+  .arcade-game .direction-pad .direction-left { grid-column: 1; grid-row: 1; }
+  .arcade-game .direction-pad .direction-up { grid-column: 2; grid-row: 1; }
+  .arcade-game .direction-pad .direction-down { grid-column: 3; grid-row: 1; }
+  .arcade-game .direction-pad .direction-right { grid-column: 4; grid-row: 1; }
+  .arcade-game .match-sidebar { grid-column: 1 / -1; grid-row: 9; display: grid; }
+  .arcade-game .pacman-board { width: min(100%, calc((100svh - 140px) * 19 / 15)); }
+  .arcade-game .memory-board, .arcade-game .minesweeper-board { width: min(100%, calc(100svh - 125px)); }
+  .chess-game { --chess-size: max(200px, calc(100svh - 150px)); }
+  .chess-game .match-heading { grid-column: 2; grid-row: 1; margin: 0; flex-wrap: wrap; }
+  .chess-game .chess-status { grid-column: 2; grid-row: 2; margin: 0; }
+  .chess-game .chess-status .turn-banner__icon { display: none; }
+  .chess-game .board-frame { grid-column: 1; grid-row: 1 / span 4; width: min(100%, calc(var(--chess-size) + 52px)); justify-self: center; }
+  .chess-game .match-sidebar { grid-column: 2; grid-row: 3 / span 2; }
+  .chess-game .piece { font-size: 25px; }
+  .chess-controls { display: block; grid-column: auto; }
+  .chess-controls .control-label { margin-bottom: 4px; }
+  .chess-controls .button { margin-top: 8px; }
+  .match-sidebar { display: flex; }
+}

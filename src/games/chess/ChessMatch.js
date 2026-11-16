@@ -75,7 +75,7 @@ export class ChessMatch extends GameMatch {
   get lastMove() {
     const history = this.engine.history({ verbose: true });
     const move = history[history.length - 1];
-    return move ? { from: move.from, to: move.to } : null;
+    return move ? { from: move.from, to: move.to, san: move.san } : null;
   }
 
   get isCheck() {

@@ -39,8 +39,8 @@ export default function StatisticsPanel({ onSync, delivery }) {
         event.preventDefault(); const form = new FormData(event.currentTarget);
         setFilters({ gameId: form.get('gameId'), playerId: form.get('playerId').trim() });
       }}>
-        <label>Juego<select name="gameId" defaultValue=""><option value="">Todos los juegos</option>{Object.entries(GAME_NAMES).map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
-        <label>Identificador del jugador<input name="playerId" placeholder="Todos los jugadores" /></label>
+        <div className="stats-filter-field"><label htmlFor="stats-game">Juego</label><select id="stats-game" name="gameId" defaultValue=""><option value="">Todos los juegos</option>{Object.entries(GAME_NAMES).map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></div>
+        <div className="stats-filter-field"><label htmlFor="stats-player">Identificador del jugador</label><input id="stats-player" name="playerId" placeholder="Todos los jugadores" /></div>
         <button className="button button--primary" type="submit">Consultar</button>
       </form>
       <p className="arcade-help">Actualización cada 10 segundos. {delivery.message} El filtro de jugador muestra sus partidas con todos sus participantes.</p>

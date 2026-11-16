@@ -70,6 +70,11 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
   const lastMove = match.lastMove;
   const board = match.board;
   const currentColor = match.turn;
+  const checkmate = match.isCheckmate;
+  const inCheck = match.isCheck && match.status !== 'finished';
+  const finished = match.status === 'finished';
+  const statusKind = checkmate ? 'mate' : inCheck ? 'check' : finished ? 'finished' : 'turn';
+  const statusLabel = checkmate ? 'JAQUE MATE' : inCheck ? 'JAQUE' : finished ? (match.isDraw ? 'TABLAS' : 'FINALIZADA') : 'EN CURSO';
   const deliverySummary = delivery.status === 'sent'
     ? 'Servicio respondió'
     : delivery.status === 'failed'
@@ -87,6 +92,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
   }
 
   function selectSquare(square, piece) {
+    if (finished) return;
     setError('');
     if (selectedSquare && legalTargets.has(square)) {
       try {
@@ -157,6 +163,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
       const outcome = match.resign();
       const events = finishEvents(match, outcome.winnerColor, adapter);
       persist(events);
+      setSelectedSquare(null);
       setVersion((value) => value + 1);
       setError('');
     } catch (resignError) {
@@ -177,8 +184,15 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
       : `Turno de ${playerLabel(currentColor)}`;
   }
 
+  function statusDescription() {
+    if (checkmate) return `${playerLabel(currentColor)} no pueden salir del jaque. La partida terminó.`;
+    if (finished) return match.result === 'DRAW' ? 'La partida terminó en empate.' : 'La partida terminó por abandono.';
+    if (inCheck) return `Debes proteger al rey de ${playerLabel(currentColor)}.`;
+    return lastMove ? `Última jugada: ${lastMove.san}` : 'Selecciona una pieza para ver sus movimientos.';
+  }
+
   return (
-    <main className="match-layout">
+    <main className="match-layout chess-game">
       <header className="match-topbar">
         <button className="text-button" onClick={onBack} type="button">
           <span aria-hidden="true">←</span> Consola
@@ -197,9 +211,15 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
               <p className="eyebrow">Partida local · dos jugadores</p>
               <h1>Ajedrez</h1>
             </div>
-            <span className={`match-state${match.status === 'finished' ? ' is-finished' : ''}`}>
-              <span /> {match.status === 'finished' ? 'FINALIZADA' : 'EN CURSO'}
+            <span className={`match-state match-state--${statusKind}`}>
+              <span /> {statusLabel}
             </span>
+          </div>
+
+          <div role="status" aria-live="polite" aria-atomic="true" className={`turn-banner chess-status chess-status--${statusKind}`}>
+            <span aria-hidden="true" className="turn-banner__icon">{checkmate ? '♚' : inCheck ? '!' : finished ? '✓' : '♟'}</span>
+            <div><strong>{statusText()}</strong><span>{statusDescription()}</span></div>
+            <span className="move-count">{lastMove?.san ?? '—'}<small>{match.moveCount} JUGADAS</small></span>
           </div>
 
           <div className="board-frame">
@@ -219,11 +239,13 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                   const selected = selectedSquare === square;
                   const last = lastMove?.from === square || lastMove?.to === square;
                   const legalTarget = legalTargets.has(square);
+                  const threatenedKing = (inCheck || checkmate) && piece?.type === 'k' && piece.color === currentColor;
                   return (
                     <button
-                      aria-label={`${square}${piece ? ` ${PIECE_NAMES[piece.type]} ${piece.color === 'w' ? 'blanco' : 'negro'}` : ''}${legalTarget ? ', movimiento legal' : ''}`}
+                      aria-label={`${square}${piece ? ` ${PIECE_NAMES[piece.type]} ${piece.color === 'w' ? 'blanco' : 'negro'}` : ''}${legalTarget ? ', movimiento legal' : ''}${threatenedKing ? checkmate ? ', jaque mate' : ', en jaque' : ''}`}
                       aria-selected={selected}
-                      className={`square${dark ? ' square--dark' : ''}${selected ? ' is-selected' : ''}${last ? ' is-last' : ''}${legalTarget ? ' is-legal' : ''}`}
+                      className={`square${dark ? ' square--dark' : ''}${selected ? ' is-selected' : ''}${last ? ' is-last' : ''}${legalTarget ? ' is-legal' : ''}${threatenedKing ? ' is-threatened' : ''}`}
+                      disabled={finished}
                       key={square}
                       onClick={() => selectSquare(square, piece)}
                       role="gridcell"
@@ -248,26 +270,13 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
             </div>
           </div>
 
-          <div aria-live="polite" className="turn-banner">
-            <span className="turn-banner__icon">{match.status === 'finished' ? '✓' : '♟'}</span>
-            <div><strong>{statusText()}</strong><span>Las reglas y movimientos se validan con chess.js.</span></div>
-            <span className="move-count">{match.moveCount} <small>JUGADAS</small></span>
-          </div>
         </section>
 
         <aside className="match-sidebar">
-          <section className="side-card">
+          <section className="side-card chess-controls">
             <div className="side-card__heading">
-              <div><p className="eyebrow">Sesión activa</p><h2>Tu partida</h2></div>
+              <div><p className="eyebrow">Dos jugadores</p><h2>Tu partida</h2></div>
               <span className="live-tag"><i /> LOCAL</span>
-            </div>
-            <div className="side-stat"><span>Identificador</span><code>{match.id}</code></div>
-            <div className="side-stat"><span>Modo</span><strong>Dos jugadores</strong></div>
-            <div className="side-stat"><span>Motor de reglas</span><strong>chess.js</strong></div>
-            <div className="side-divider" />
-            <div className="integration-note">
-              <span aria-hidden="true">⌁</span>
-              <div><strong>{deliverySummary}</strong><p>{delivery.message}</p></div>
             </div>
             {match.status === 'in-progress' && (
               <>
@@ -280,14 +289,16 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                 </button>
               </>
             )}
+            {finished && <p className="arcade-help">{statusText()}. Puedes elegir otra partida o volver a la consola.</p>}
             {error && <p className="form-error" role="alert">{error}</p>}
           </section>
 
-          <section className="side-card side-card--sessions">
-            <div className="side-card__heading">
-              <div><p className="eyebrow">Multisesión</p><h2>Partidas guardadas</h2></div>
+          <details className="side-card side-card--sessions">
+            <summary>
+              Partidas guardadas
               <span className="session-count">{matches.length}</span>
-            </div>
+            </summary>
+            <div className="details-content">
             <div className="session-list">
               {matches.map((saved) => (
                 <button
@@ -303,15 +314,19 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
               ))}
             </div>
             <button className="text-button text-button--new" onClick={onBack} type="button">＋ Crear otra partida</button>
-          </section>
+            </div>
+          </details>
 
-          <div className="ai-note">
-            <span aria-hidden="true">✳</span>
-            <p><strong>Oponente Prolog</strong><br />Se integrará en una siguiente etapa. Esta versión es local y no usa IA.</p>
-          </div>
+          <details className="side-card">
+            <summary>Detalles y conexión</summary>
+            <div className="details-content">
+              <div className="side-stat"><span>Identificador de partida</span><code>{match.id}</code></div>
+              <div className="integration-note"><div><strong>{deliverySummary}</strong><p>{delivery.message}</p></div></div>
+              <p className="arcade-help">Partida local para dos jugadores. Las reglas se validan con chess.js. El oponente Prolog está pendiente de integración.</p>
+            </div>
+          </details>
         </aside>
       </div>
-      <footer className="page-footer"><span>GAMECONSOLE · ETAPA 01</span><span>Diseñado para jugar mejor.</span></footer>
     </main>
   );
 }

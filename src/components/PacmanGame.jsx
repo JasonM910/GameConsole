@@ -32,6 +32,14 @@ export default function PacmanGame(props) {
 
   return (
     <ArcadeLayout {...props} title="Pac-Man" match={match} error={error} onRestart={restart}
+      help={<p className="arcade-help">Flechas o WASD para moverte · Espacio para pausar · Limpia los dos niveles. Las esferas grandes te permiten comer fantasmas por 6 segundos.</p>}
+      controls={<div className="pacman-controls">
+        <span className="keyboard-help">↑ ↓ ← → / WASD · Espacio para pausar</span>
+        <div className="direction-pad" aria-label="Controles táctiles">
+          {[['up', '↑'], ['left', '←'], ['down', '↓'], ['right', '→']].map(([direction, label]) => <button key={direction} aria-label={`Mover ${direction}`} className={`button button--quiet direction-${direction}`} onClick={() => match.setDirection(direction)} type="button">{label}</button>)}
+        </div>
+        {match.powerMs > 0 && <p className="power-message">Poder activo · {Math.ceil(match.powerMs / 1000)} s</p>}
+      </div>}
       onToggle={() => act((game) => game.status === 'ready' ? game.start() : game.status === 'paused' ? game.resume() : game.pause())}
       summary={<><div className="side-stat"><span>Puntuación</span><strong>{match.score}</strong></div><div className="side-stat"><span>Vidas</span><strong aria-label={`${match.lives} vidas`}>{'♥'.repeat(match.lives) || '0'}</strong></div><div className="side-stat"><span>Nivel</span><strong>{match.level} / {match.maxLevels}</strong></div><div className="side-stat"><span>Puntos restantes</span><strong>{match.maze.pelletsLeft}</strong></div></>}>
       <div className={`pacman-board${match.invulnerableMs > 0 ? ' is-invulnerable' : ''}`} role="img" aria-label={`Laberinto de Pac-Man. Puntuación ${match.score}, ${match.lives} vidas. Usa flechas o WASD.`} style={{ gridTemplateColumns: `repeat(${match.maze.rows[0].length}, 1fr)` }}>
@@ -45,11 +53,6 @@ export default function PacmanGame(props) {
           </div>;
         }))}
       </div>
-      <p className="arcade-help">Flechas o WASD para moverte · Espacio para pausar · Limpia los dos niveles. Las esferas grandes te permiten comer fantasmas por 6 segundos.</p>
-      <div className="direction-pad" aria-label="Controles táctiles">
-        {[['up', '↑'], ['left', '←'], ['down', '↓'], ['right', '→']].map(([direction, label]) => <button key={direction} aria-label={`Mover ${direction}`} className={`button button--quiet direction-${direction}`} onClick={() => match.setDirection(direction)} type="button">{label}</button>)}
-      </div>
-      {match.powerMs > 0 && <p className="power-message">Poder activo · {Math.ceil(match.powerMs / 1000)} s</p>}
     </ArcadeLayout>
   );
 }

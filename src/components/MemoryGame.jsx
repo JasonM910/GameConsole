@@ -10,6 +10,7 @@ export default function MemoryGame(props) {
   }
   return (
     <ArcadeLayout {...props} title="Memoria" match={match} error={error} onRestart={restart}
+      help={<p className="arcade-help">Encuentra las ocho parejas antes de que termine el tiempo. Voltea dos cartas por intento; las parejas encontradas permanecen visibles.</p>}
       onToggle={() => act((game) => game.status === 'ready' ? game.start() : game.status === 'paused' ? game.resume() : game.pause())}
       summary={<><div className="side-stat"><span>Parejas encontradas</span><strong>{match.pairsFound} / {match.pairCount}</strong></div><div className="side-stat"><span>Intentos</span><strong>{match.attempts}</strong></div><div className="side-stat"><span>Tiempo restante</span><strong>{match.remainingSeconds} s</strong></div></>}>
       <div className="memory-board" style={{ gridTemplateColumns: `repeat(${match.columns}, 1fr)` }} aria-label="Tablero de Memoria">
@@ -21,7 +22,6 @@ export default function MemoryGame(props) {
             onClick={() => act((game) => game.flip(card.id))}><span aria-hidden="true">{visible ? card.symbol : '?'}</span>{card.matched && <small>✓</small>}</button>;
         })}
       </div>
-      <p className="arcade-help">Encuentra las ocho parejas antes de que termine el tiempo. Voltea dos cartas por intento; las parejas encontradas permanecen visibles.</p>
     </ArcadeLayout>
   );
 }
