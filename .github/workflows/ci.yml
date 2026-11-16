@@ -1,0 +1,90 @@
+name: GameConsole CI and deployment artifacts
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      gamestats_ref:
+        description: Rama o commit compatible de GameStats
+        default: main
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gameconsole-web
+          path: dist/
+          if-no-files-found: error
+
+  integration:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: GameConsole
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ vars.GAMESTATS_REPOSITORY || 'JasonM910/GameStats' }}
+          ref: ${{ inputs.gamestats_ref || vars.GAMESTATS_REF || 'main' }}
+          path: GameStats
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: GameConsole/package-lock.json
+      - run: npm ci
+        working-directory: GameConsole
+      - name: Build and start all services
+        run: docker compose up --build -d --wait --wait-timeout 120
+        working-directory: GameConsole
+      - name: Validate events, Scala metrics and persistence
+        working-directory: GameConsole
+        env:
+          GAMESTATS_BASE_URL: http://127.0.0.1:8088
+          INTEGRATION_RECEIPT: ${{ runner.temp }}/integration.json
+        run: |
+          npm run test:integration
+          docker compose restart gamestats
+          docker compose up -d --wait --wait-timeout 90
+          node scripts/smoke-integration.mjs --verify
+      - name: Package tested web image
+        run: docker save gameconsole-web -o "$RUNNER_TEMP/gameconsole-web.tar"
+      - run: npx playwright install --with-deps chromium
+        working-directory: GameConsole
+      - name: Verify browser against real services
+        run: npm run test:e2e
+        working-directory: GameConsole
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:8088
+          GAMESTATS_LIVE: '1'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gameconsole-docker
+          path: ${{ runner.temp }}/gameconsole-web.tar
+          if-no-files-found: error
+      - name: Container logs
+        if: failure()
+        run: docker compose logs --no-color
+        working-directory: GameConsole
+      - name: Stop services
+        if: always()
+        run: docker compose down
+        working-directory: GameConsole

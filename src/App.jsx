@@ -1,8 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChessGame from './components/ChessGame.jsx';
+import PacmanGame from './components/PacmanGame.jsx';
+import MemoryGame from './components/MemoryGame.jsx';
+import StatisticsPanel from './components/StatisticsPanel.jsx';
 import GameCatalog from './components/GameCatalog.jsx';
 import { ChessMatch } from './games/chess/ChessMatch.js';
+import { PacmanMatch } from './games/pacman/PacmanMatch.js';
+import { MemoryMatch } from './games/memory/MemoryMatch.js';
 import { EventAdapter } from './services/EventAdapter.js';
+import { EventDelivery } from './services/EventDelivery.js';
 import { loadMatches, saveMatch } from './services/matchStorage.js';
 
 function initialStorage() {
@@ -36,13 +42,37 @@ export default function App() {
   const [storage, setStorage] = useState(initialStorage);
   const [selectedGameId, setSelectedGameId] = useState('CHESS');
   const [activeMatchId, setActiveMatchId] = useState(null);
+  const [showStats, setShowStats] = useState(false);
   const [delivery, setDelivery] = useState({
     status: 'pending',
-    message: 'Sin servicio HTTP configurado; los eventos se conservan en esta partida.',
+    message: 'Comprobando eventos pendientes de sincronización.',
   });
-  const adapter = useMemo(() => new EventAdapter(), []);
+  const adapter = useMemo(() => new EventAdapter({ endpoint: import.meta.env.VITE_GAMESTATS_URL ?? '/api/events' }), []);
+  const eventDelivery = useMemo(() => new EventDelivery(adapter), [adapter]);
+  const deliveryRequest = useRef(0);
   const matches = storage.matches;
   const activeRecord = matches.find((match) => match.id === activeMatchId);
+
+  const publishEvents = useCallback(async () => {
+    const request = ++deliveryRequest.current;
+    setDelivery({ status: 'pending', message: 'Sincronizando eventos guardados con GameStats…' });
+    try {
+      const result = await eventDelivery.sync();
+      if (request === deliveryRequest.current) setDelivery(result);
+      return result;
+    } catch (error) {
+      const result = { status: 'failed', message: `${error.message}. Los eventos siguen guardados; se reintentará el envío.` };
+      if (request === deliveryRequest.current) setDelivery(result);
+      return result;
+    }
+  }, [eventDelivery]);
+
+  useEffect(() => {
+    void publishEvents();
+    const timer = setInterval(publishEvents, 15000);
+    window.addEventListener('online', publishEvents);
+    return () => { clearInterval(timer); window.removeEventListener('online', publishEvents); };
+  }, [publishEvents]);
 
   const refreshMatches = useCallback(() => {
     try {
@@ -62,8 +92,15 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorage);
   }, [refreshMatches]);
 
-  function startChessMatch() {
+  function startMatch(gameId = selectedGameId) {
     try {
+      if (gameId === 'PACMAN' || gameId === 'MEMORY') {
+        const match = gameId === 'PACMAN' ? new PacmanMatch() : new MemoryMatch();
+        saveMatch(match.toJSON());
+        refreshMatches();
+        setActiveMatchId(match.id);
+        return;
+      }
       const match = new ChessMatch();
       const events = makeMatchEvents(match, adapter);
       for (const event of events) {
@@ -72,24 +109,9 @@ export default function App() {
       saveMatch(match.toJSON());
       refreshMatches();
       setActiveMatchId(match.id);
-      setDelivery({
-        status: 'pending',
-        message: 'Sin servicio HTTP configurado; los eventos se conservan en esta partida.',
-      });
       void publishEvents(events);
     } catch (error) {
       setStorage((current) => ({ ...current, error: error.message }));
-    }
-  }
-
-  async function publishEvents(events) {
-    for (const event of events) {
-      try {
-        const result = await adapter.send(event);
-        setDelivery(result);
-      } catch (error) {
-        setDelivery({ status: 'failed', message: error.message });
-      }
     }
   }
 
@@ -99,6 +121,7 @@ export default function App() {
       refreshMatches();
     } catch (error) {
       setStorage((current) => ({ ...current, error: error.message }));
+      throw error;
     }
   }
 
@@ -117,6 +140,17 @@ export default function App() {
     );
   }
 
+  if (activeRecord?.gameId === 'PACMAN' || activeRecord?.gameId === 'MEMORY') {
+    const Game = activeRecord.gameId === 'PACMAN' ? PacmanGame : MemoryGame;
+    return <Game key={activeRecord.id} record={activeRecord} adapter={adapter}
+      delivery={delivery} onSave={persistMatch} onEvents={publishEvents}
+      onBack={() => setActiveMatchId(null)} onRestart={startMatch} />;
+  }
+
+  if (showStats) {
+    return <main className="home-layout"><header className="match-topbar"><button className="text-button" onClick={() => setShowStats(false)} type="button">← Consola</button><span className="match-brand">GAME<span className="brand-highlight">STATS</span></span></header><div className="home-content"><StatisticsPanel onSync={publishEvents} delivery={delivery} /></div></main>;
+  }
+
   return (
     <main className="home-layout">
       <div className="ambient ambient--one" />
@@ -126,7 +160,7 @@ export default function App() {
           <span className="brand-mark motion-safe:animate-pixel-glow">G</span>
           <span>GAME<span className="brand-highlight">CONSOLE</span></span>
         </a>
-        <div className="topbar-meta"><span className="online-indicator" /> TU ESPACIO DE JUEGO <span className="meta-divider">/</span> ETAPA 01</div>
+        <button className="button button--quiet" onClick={() => setShowStats(true)} type="button">Estadísticas ↗</button>
         <span className="profile-chip"><span>J</span> JUGADOR</span>
       </header>
 
@@ -155,7 +189,7 @@ export default function App() {
       <div className="home-content">
         <GameCatalog
           onSelect={setSelectedGameId}
-          onStart={startChessMatch}
+          onStart={() => startMatch()}
           selectedGameId={selectedGameId}
         />
 
@@ -167,14 +201,14 @@ export default function App() {
             <span className="saved-total">{String(matches.length).padStart(2, '0')} GUARDADAS</span>
           </div>
           {matches.length === 0 ? (
-            <div className="empty-sessions"><span>♙</span><p>Aún no hay partidas.<br />Elige Ajedrez y crea la primera.</p></div>
+            <div className="empty-sessions"><span>♙</span><p>Aún no hay partidas.<br />Elige un juego y crea la primera.</p></div>
           ) : (
             <div className="saved-grid">
               {matches.map((match) => (
                 <button className="saved-card" key={match.id} onClick={() => setActiveMatchId(match.id)} type="button">
-                  <span className="saved-card__icon">♞</span>
+                  <span className="saved-card__icon">{match.gameId === 'CHESS' ? '♞' : match.gameId === 'PACMAN' ? '◉' : '▣'}</span>
                   <span className="saved-card__main">
-                    <strong>Ajedrez</strong>
+                    <strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria' }[match.gameId]}</strong>
                     <small>{match.id.slice(0, 8).toUpperCase()} · {formatDate(match.createdAt)}</small>
                   </span>
                   <span className={`saved-card__status${match.status === 'finished' ? ' is-done' : ''}`}>

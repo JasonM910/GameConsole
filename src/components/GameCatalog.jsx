@@ -15,7 +15,7 @@ const GAMES = [
     description: 'Recorre el laberinto y suma puntos.',
     accent: 'pacman',
     icon: '◉',
-    available: false,
+    available: true,
   },
   {
     id: 'MEMORY',
@@ -24,7 +24,7 @@ const GAMES = [
     description: 'Voltea cartas y pon a prueba tu memoria.',
     accent: 'memory',
     icon: '▣',
-    available: false,
+    available: true,
   },
 ];
 
@@ -75,7 +75,7 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
             <strong>{selected?.name}</strong>
             <span>
               {selected?.available
-                ? 'Partida local para dos jugadores'
+                ? selected.id === 'CHESS' ? 'Partida local para dos jugadores' : 'Partida individual'
                 : 'Módulo pendiente de implementación'}
             </span>
           </div>

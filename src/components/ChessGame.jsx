@@ -74,7 +74,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
     ? 'Servicio respondió'
     : delivery.status === 'failed'
       ? 'Envío pendiente'
-      : 'Integración con GameStats pendiente';
+      : 'Eventos pendientes de sincronización';
 
   function persist(events = []) {
     for (const event of events) {
@@ -217,7 +217,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                   const square = `${'abcdefgh'[columnIndex]}${8 - rowIndex}`;
                   const dark = (rowIndex + columnIndex) % 2 === 1;
                   const selected = selectedSquare === square;
-                  const last = lastMove === square;
+                  const last = lastMove?.from === square || lastMove?.to === square;
                   const legalTarget = legalTargets.has(square);
                   return (
                     <button
@@ -296,8 +296,8 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                   onClick={() => onOpenMatch(saved.id)}
                   type="button"
                 >
-                  <span className="session-icon">♞</span>
-                  <span className="session-item__text"><strong>Ajedrez</strong><small>{saved.id.slice(0, 8).toUpperCase()}</small></span>
+                  <span className="session-icon">{saved.gameId === 'CHESS' ? '♞' : saved.gameId === 'PACMAN' ? '◉' : '▣'}</span>
+                  <span className="session-item__text"><strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria' }[saved.gameId]}</strong><small>{saved.id.slice(0, 8).toUpperCase()}</small></span>
                   <span className={`session-status${saved.status === 'finished' ? ' is-done' : ''}`} />
                 </button>
               ))}

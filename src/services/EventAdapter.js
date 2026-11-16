@@ -24,7 +24,15 @@ const PACMAN_FIELDS = {
   LEVEL_COMPLETED: { level: 'positiveInteger', durationSeconds: 'nonNegativeInteger' },
 };
 
-const SCHEMAS = { CHESS: CHESS_FIELDS, PACMAN: PACMAN_FIELDS };
+const MEMORY_FIELDS = {
+  MATCH_STARTED: { rows: 'positiveInteger', columns: 'positiveInteger', pairCount: 'positiveInteger', timeLimitSeconds: 'positiveInteger' },
+  CARD_FLIPPED: { cardId: 'text', symbol: 'text', turn: 'positiveInteger' },
+  PAIR_MATCHED: { firstCardId: 'text', secondCardId: 'text', turn: 'positiveInteger' },
+  PAIR_MISMATCHED: { firstCardId: 'text', secondCardId: 'text', turn: 'positiveInteger' },
+  TIME_EXPIRED: { pairsFound: 'nonNegativeInteger' },
+  MATCH_FINISHED: { result: 'memoryResult', durationSeconds: 'nonNegativeInteger' },
+};
+const SCHEMAS = { CHESS: CHESS_FIELDS, PACMAN: PACMAN_FIELDS, MEMORY: MEMORY_FIELDS };
 const PIECES = new Set(['PAWN', 'KNIGHT', 'BISHOP', 'ROOK', 'QUEEN', 'KING']);
 const RESULTS = new Set(['WIN', 'LOSS', 'DRAW']);
 const SQUARE = /^[a-h][1-8]$/;
@@ -35,6 +43,8 @@ function isNonEmptyText(value) {
 
 function validValue(kind, value) {
   switch (kind) {
+    case 'memoryResult':
+      return value === 'WIN' || value === 'LOSS';
     case 'side':
       return value === 'WHITE' || value === 'BLACK';
     case 'piece':
@@ -80,10 +90,13 @@ function validateData(gameId, type, data) {
   if (gameId === 'CHESS' && type === 'MOVE_PLAYED' && data.from === data.to) {
     throw new Error('data.from y data.to deben ser casillas diferentes');
   }
+  if (gameId === 'MEMORY' && ['PAIR_MATCHED', 'PAIR_MISMATCHED'].includes(type) && data.firstCardId === data.secondCardId) {
+    throw new Error('Las cartas deben ser diferentes');
+  }
 }
 
 export class EventAdapter {
-  constructor({ endpoint = import.meta.env?.VITE_GAMESTATS_URL ?? '', fetchImpl = globalThis.fetch } = {}) {
+  constructor({ endpoint = import.meta.env?.VITE_GAMESTATS_URL ?? '', fetchImpl = globalThis.fetch?.bind(globalThis) } = {}) {
     this.endpoint = endpoint.trim();
     this.fetchImpl = fetchImpl;
   }
@@ -112,7 +125,7 @@ export class EventAdapter {
     if (!this.endpoint) {
       return {
         status: 'pending',
-        message: 'GameStats no ofrece una API HTTP; el evento queda guardado localmente.',
+        message: 'Sin API configurada; los eventos quedan guardados localmente.',
       };
     }
     if (typeof this.fetchImpl !== 'function') {
@@ -123,6 +136,7 @@ export class EventAdapter {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify([event]),
+      signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) {
       return {
@@ -131,5 +145,21 @@ export class EventAdapter {
       };
     }
     return { status: 'sent', message: 'El servicio configurado respondió correctamente.' };
+  }
+
+  async sendBatch(events) {
+    if (!this.endpoint) return { status: 'pending', message: 'Sin API configurada; los eventos siguen guardados.' };
+    const response = await this.fetchImpl(this.endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(events), signal: AbortSignal.timeout(10000),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error?.message ?? `GameStats respondió HTTP ${response.status}`);
+    if (payload.status !== 'accepted' || !Array.isArray(payload.eventIds)
+      || payload.eventIds.length !== events.length
+      || events.some((event, index) => payload.eventIds[index] !== event.eventId)) {
+      throw new Error('GameStats no confirmó todos los eventos enviados');
+    }
+    return { status: 'sent', eventIds: payload.eventIds, message: 'Todos los eventos fueron confirmados por GameStats.' };
   }
 }

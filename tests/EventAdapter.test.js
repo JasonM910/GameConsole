@@ -19,7 +19,7 @@ test('genera eventos Chess con los campos comunes y los datos admitidos', () => 
   assert.equal(new Date(event.timestamp).toISOString(), event.timestamp);
 });
 
-test('rechaza campos adicionales, movimientos inválidos y Memoria aún no implementada', () => {
+test('rechaza campos adicionales, movimientos inválidos y datos incompletos de Memoria', () => {
   const adapter = new EventAdapter();
   assert.throws(() => adapter.createEvent({
     gameId: 'CHESS',
@@ -41,7 +41,7 @@ test('rechaza campos adicionales, movimientos inválidos y Memoria aún no imple
     playerId: 'PLAYER_ONE',
     type: 'MATCH_STARTED',
     data: {},
-  }), /no admite el juego/);
+  }), /exactamente/);
 });
 
 test('sin dirección configurada no inicia una solicitud ni simula entrega', async () => {

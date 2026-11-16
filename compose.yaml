@@ -1,0 +1,39 @@
+services:
+  analyzer:
+    build: ../GameStats/scala
+    command: ["--serve"]
+    restart: unless-stopped
+    environment:
+      GAMESTATS_ANALYZER_PORT: "8081"
+
+  gamestats:
+    build: ../GameStats
+    command: ["-serve"]
+    restart: unless-stopped
+    environment:
+      GAMESTATS_DATA: /data/partidas.json
+      GAMESTATS_ANALYZER_URL: http://analyzer:8081/analyze
+      GAMESTATS_LISTEN: :8080
+    volumes:
+      - gamestats-data:/data
+    depends_on:
+      analyzer:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "/app/gamestats", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${GAMECONSOLE_PORT:-8088}:80"
+    depends_on:
+      gamestats:
+        condition: service_healthy
+
+volumes:
+  gamestats-data:
