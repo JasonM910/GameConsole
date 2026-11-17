@@ -2,8 +2,6 @@
 
 Consola arcade sobre React 18, Vite, JavaScript y Tailwind CSS. Incluye Ajedrez local o contra SWI-Prolog, Pac-Man, Memoria, Buscaminas y un panel conectado con GameStats. Las reglas viven en clases; las vistas React se conectan a un motor de sesiones independiente que permite ejecutar varias partidas a la vez.
 
-El catálogo actual ofrece cuatro juegos. El enunciado académico solicita exactamente tres; se debe acordar cuáles presentar en la entrega final.
-
 ## Ejecución integrada con Docker
 
 Se necesitan Docker Desktop con contenedores Linux y Docker Compose. Los dos repositorios deben estar juntos:
