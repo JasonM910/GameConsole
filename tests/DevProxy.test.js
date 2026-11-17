@@ -30,3 +30,34 @@ test('Vite devuelve JSON y HTTP 503 cuando GameStats rechaza la conexión', asyn
     else process.env.GAMESTATS_PROXY_TARGET = original;
   }
 });
+
+test('Vite dirige decisiones a Prolog y estadísticas a Go usando destinos separados', async () => {
+  const targets = [];
+  const original = { GAMESTATS_PROXY_TARGET: process.env.GAMESTATS_PROXY_TARGET, PROLOG_PROXY_TARGET: process.env.PROLOG_PROXY_TARGET };
+  let vite;
+  try {
+    for (const service of ['go', 'prolog']) {
+      const server = createHttpServer((request, response) => {
+        response.setHeader('Content-Type', 'application/json');
+        response.end(JSON.stringify({ service, path: request.url }));
+      });
+      await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+      targets.push(server);
+    }
+    process.env.GAMESTATS_PROXY_TARGET = `http://127.0.0.1:${targets[0].address().port}`;
+    process.env.PROLOG_PROXY_TARGET = `http://127.0.0.1:${targets[1].address().port}`;
+    vite = await createServer({ logLevel: 'silent', server: { host: '127.0.0.1', port: 0, strictPort: true } });
+    await vite.listen();
+    const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
+    const decision = await (await fetch(`${origin}/api/prolog/move`, { method: 'POST' })).json();
+    assert.deepEqual(decision, { service: 'prolog', path: '/api/prolog/move' });
+    const stats = await (await fetch(`${origin}/api/stats`)).json();
+    assert.deepEqual(stats, { service: 'go', path: '/api/stats' });
+  } finally {
+    await vite?.close();
+    await Promise.all(targets.map((server) => new Promise((resolve) => server.close(resolve))));
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+});

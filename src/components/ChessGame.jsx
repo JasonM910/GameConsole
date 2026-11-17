@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChessMatch } from '../games/chess/ChessMatch.js';
+import { useMemo, useState } from 'react';
+import { useRuntimeMatch } from './useRuntimeMatch.js';
 
 const PIECE_SYMBOLS = {
   wp: '♟',
@@ -36,35 +36,15 @@ function playerLabel(color) {
   return color === 'w' ? 'Blancas' : 'Negras';
 }
 
-function finishEvents(match, result, adapter) {
-  const durationSeconds = match.elapsedSeconds();
-  return ['w', 'b'].map((color) => adapter.createEvent({
-    gameId: 'CHESS',
-    matchId: match.id,
-    playerId: match.playerIdFor(color),
-    type: 'MATCH_FINISHED',
-    data: {
-      result: result === 'DRAW' ? 'DRAW' : result === color ? 'WIN' : 'LOSS',
-      durationSeconds,
-    },
-  }));
-}
-
-export default function ChessGame({ record, adapter, delivery, onSave, onEvents, onBack, onOpenMatch, matches }) {
-  const [match, setMatch] = useState(() => ChessMatch.fromJSON(record));
+export default function ChessGame({ record, runtime, delivery, onBack, onStats, onOpenMatch, matches }) {
+  const { match, error, readOnly, aiStatus, aiInfo } = useRuntimeMatch({ runtime, record });
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [promotion, setPromotion] = useState('q');
-  const [error, setError] = useState('');
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => {
-    setMatch(ChessMatch.fromJSON(record));
-    setSelectedSquare(null);
-  }, [record]);
+  const computerTurn = match.isComputerTurn;
 
   const legalMoves = useMemo(
     () => match.legalMovesFrom(selectedSquare),
-    [match, selectedSquare, version],
+    [match, selectedSquare, match.moveCount],
   );
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => move.to)), [legalMoves]);
   const lastMove = match.lastMove;
@@ -81,95 +61,15 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
       ? 'Envío pendiente'
       : 'Eventos pendientes de sincronización';
 
-  function persist(events = []) {
-    for (const event of events) {
-      match.appendEvent(event);
-    }
-    onSave(match.toJSON());
-    if (events.length) {
-      onEvents(events);
-    }
-  }
-
   function selectSquare(square, piece) {
-    if (finished) return;
-    setError('');
+    if (finished || readOnly || computerTurn) return;
     if (selectedSquare && legalTargets.has(square)) {
-      try {
-        const move = match.playMove({ from: selectedSquare, to: square, promotion });
-        const events = [
-          adapter.createEvent({
-            gameId: 'CHESS',
-            matchId: match.id,
-            playerId: move.playerId,
-            type: 'MOVE_PLAYED',
-            data: {
-              ply: move.ply,
-              piece: move.piece,
-              from: move.from,
-              to: move.to,
-              thinkTimeSeconds: move.thinkTimeSeconds,
-            },
-          }),
-        ];
-        if (move.capturedPiece) {
-          events.push(adapter.createEvent({
-            gameId: 'CHESS',
-            matchId: match.id,
-            playerId: move.playerId,
-            type: 'PIECE_CAPTURED',
-            data: { ply: move.ply, capturedPiece: move.capturedPiece },
-          }));
-        }
-        if (move.gaveCheck) {
-          events.push(adapter.createEvent({
-            gameId: 'CHESS',
-            matchId: match.id,
-            playerId: move.playerId,
-            type: 'CHECK_GIVEN',
-            data: { ply: move.ply },
-          }));
-        }
-        if (move.checkmate) {
-          events.push(adapter.createEvent({
-            gameId: 'CHESS',
-            matchId: match.id,
-            playerId: move.playerId,
-            type: 'CHECKMATE',
-            data: { ply: move.ply },
-          }));
-        }
-        if (move.gameOver) {
-          events.push(...finishEvents(match, move.result, adapter));
-        }
-        setSelectedSquare(null);
-        persist(events);
-        setVersion((value) => value + 1);
-      } catch (moveError) {
-        setError(moveError.message);
-      }
-      return;
-    }
-
-    if (piece?.color === currentColor) {
-      setSelectedSquare(square);
-    } else {
+      runtime.moveChess(match.id, { from: selectedSquare, to: square, promotion });
       setSelectedSquare(null);
-    }
+    } else setSelectedSquare(piece?.color === currentColor ? square : null);
   }
 
-  function resign() {
-    try {
-      const outcome = match.resign();
-      const events = finishEvents(match, outcome.winnerColor, adapter);
-      persist(events);
-      setSelectedSquare(null);
-      setVersion((value) => value + 1);
-      setError('');
-    } catch (resignError) {
-      setError(resignError.message);
-    }
-  }
+  function resign() { runtime.resign(match.id); setSelectedSquare(null); }
 
   function statusText() {
     if (match.status === 'finished') {
@@ -185,6 +85,9 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
   }
 
   function statusDescription() {
+    if (readOnly) return 'Esta partida se controla desde otra pestaña. Aquí puedes observarla.';
+    if (aiStatus === 'error') return 'Prolog no pudo responder. Reintenta sin perder la partida.';
+    if (computerTurn) return 'Prolog está calculando su jugada…';
     if (checkmate) return `${playerLabel(currentColor)} no pueden salir del jaque. La partida terminó.`;
     if (finished) return match.result === 'DRAW' ? 'La partida terminó en empate.' : 'La partida terminó por abandono.';
     if (inCheck) return `Debes proteger al rey de ${playerLabel(currentColor)}.`;
@@ -194,9 +97,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
   return (
     <main className="match-layout chess-game">
       <header className="match-topbar">
-        <button className="text-button" onClick={onBack} type="button">
-          <span aria-hidden="true">←</span> Consola
-        </button>
+        <nav className="match-navigation" aria-label="Navegación de partida"><button className="text-button" onClick={onBack} type="button"><span aria-hidden="true">←</span> Consola</button><button className="text-button" onClick={onStats} type="button">Estadísticas</button></nav>
         <div className="match-brand">
           <span className="brand-mark motion-safe:animate-pixel-glow">G</span>
           <span>GAME<span className="brand-highlight">CONSOLE</span></span>
@@ -204,11 +105,12 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
         <span className="match-id">ID · {match.id.slice(0, 8).toUpperCase()}</span>
       </header>
 
+      {readOnly && <p className="ownership-note" role="status">Partida abierta en otra pestaña. Los controles se habilitarán al cerrar esa pestaña.</p>}
       <div className="match-content">
         <section className="board-panel">
           <div className="match-heading">
             <div>
-              <p className="eyebrow">Partida local · dos jugadores</p>
+              <p className="eyebrow">{match.opponent === 'prolog' ? 'Tú contra Prolog · juegas con blancas' : 'Partida local · dos jugadores'}</p>
               <h1>Ajedrez</h1>
             </div>
             <span className={`match-state match-state--${statusKind}`}>
@@ -245,7 +147,7 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
                       aria-label={`${square}${piece ? ` ${PIECE_NAMES[piece.type]} ${piece.color === 'w' ? 'blanco' : 'negro'}` : ''}${legalTarget ? ', movimiento legal' : ''}${threatenedKing ? checkmate ? ', jaque mate' : ', en jaque' : ''}`}
                       aria-selected={selected}
                       className={`square${dark ? ' square--dark' : ''}${selected ? ' is-selected' : ''}${last ? ' is-last' : ''}${legalTarget ? ' is-legal' : ''}${threatenedKing ? ' is-threatened' : ''}`}
-                      disabled={finished}
+                      disabled={finished || readOnly || computerTurn}
                       key={square}
                       onClick={() => selectSquare(square, piece)}
                       role="gridcell"
@@ -275,21 +177,23 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
         <aside className="match-sidebar">
           <section className="side-card chess-controls">
             <div className="side-card__heading">
-              <div><p className="eyebrow">Dos jugadores</p><h2>Tu partida</h2></div>
-              <span className="live-tag"><i /> LOCAL</span>
+              <div><p className="eyebrow">{match.opponent === 'prolog' ? 'Computadora · Prolog' : 'Dos jugadores'}</p><h2>Tu partida</h2></div>
+              <span className="live-tag"><i /> {match.opponent === 'prolog' ? 'PROLOG' : 'LOCAL'}</span>
             </div>
             {match.status === 'in-progress' && (
               <>
                 <label className="control-label" htmlFor="promotion">Promoción de peón</label>
-                <select id="promotion" onChange={(event) => setPromotion(event.target.value)} value={promotion}>
+                <select disabled={readOnly || computerTurn} id="promotion" onChange={(event) => setPromotion(event.target.value)} value={promotion}>
                   {PROMOTIONS.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
                 </select>
-                <button className="button button--quiet button--full" onClick={resign} type="button">
+                <button className="button button--quiet button--full" onClick={resign} disabled={readOnly} type="button">
                   Finalizar por abandono
                 </button>
               </>
             )}
             {finished && <p className="arcade-help">{statusText()}. Puedes elegir otra partida o volver a la consola.</p>}
+            {aiStatus === 'thinking' && <p className="ai-thinking" role="status">Prolog está pensando…</p>}
+            {aiStatus === 'error' && !readOnly && <button className="button button--quiet button--full" onClick={() => runtime.retryComputer(match.id)} type="button">Reintentar jugada Prolog</button>}
             {error && <p className="form-error" role="alert">{error}</p>}
           </section>
 
@@ -322,7 +226,8 @@ export default function ChessGame({ record, adapter, delivery, onSave, onEvents,
             <div className="details-content">
               <div className="side-stat"><span>Identificador de partida</span><code>{match.id}</code></div>
               <div className="integration-note"><div><strong>{deliverySummary}</strong><p>{delivery.message}</p></div></div>
-              <p className="arcade-help">Partida local para dos jugadores. Las reglas se validan con chess.js. El oponente Prolog está pendiente de integración.</p>
+              <p className="arcade-help">{match.opponent === 'prolog' ? 'SWI-Prolog genera movimientos legales y elige con negamax y poda alfa-beta a profundidad 2. chess.js vuelve a validar cada respuesta.' : 'Partida local para dos jugadores. Las reglas se validan con chess.js.'}</p>
+              {aiInfo && <p className="arcade-help">Última búsqueda: {aiInfo.nodes} posiciones · profundidad {aiInfo.depth} · evaluación {aiInfo.score} centipeones.</p>}
             </div>
           </details>
         </aside>

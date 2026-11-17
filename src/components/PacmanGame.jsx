@@ -11,7 +11,7 @@ function initialMuted() {
   try { return localStorage.getItem('gameconsole:pacman:muted') === 'true'; } catch { return false; }
 }
 
-function PacmanBoard({ match, boardRef, onToggle }) {
+function PacmanBoard({ match, boardRef, onToggle, readOnly, onDirection }) {
   const canvas = useRef(null);
   const swipe = useRef(null);
   useEffect(() => {
@@ -31,10 +31,10 @@ function PacmanBoard({ match, boardRef, onToggle }) {
     aria-label={`Laberinto de Pac-Man. Puntuación ${match.score}, ${match.lives} vidas. Usa flechas o WASD.`}
     aria-describedby="pacman-instructions"
     style={{ '--maze-ratio': match.maze.width / match.maze.height }}
-    onClick={() => { if (match.status === 'ready' || match.status === 'paused') onToggle(); }}
+    onClick={() => { if (!readOnly && (match.status === 'ready' || match.status === 'paused')) onToggle(); }}
     onPointerDown={(event) => {
       event.currentTarget.focus({ preventScroll: true });
-      if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+      if (!readOnly && (event.pointerType === 'touch' || event.pointerType === 'pen')) {
         swipe.current = { x: event.clientX, y: event.clientY };
         event.currentTarget.setPointerCapture(event.pointerId);
       }
@@ -43,7 +43,7 @@ function PacmanBoard({ match, boardRef, onToggle }) {
       if (!swipe.current) return;
       const dx = event.clientX - swipe.current.x; const dy = event.clientY - swipe.current.y;
       if (Math.max(Math.abs(dx), Math.abs(dy)) < 14) return;
-      match.setDirection(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up');
+      onDirection(Math.abs(dx) > Math.abs(dy) ? dx > 0 ? 'right' : 'left' : dy > 0 ? 'down' : 'up');
       swipe.current = { x: event.clientX, y: event.clientY };
     }}
     onPointerUp={() => { swipe.current = null; }} onPointerCancel={() => { swipe.current = null; }}>
@@ -57,7 +57,7 @@ export default function PacmanGame(props) {
   const audio = useMemo(() => new PacmanAudio(), []);
   const [muted, setMuted] = useState(initialMuted);
   const boardRef = useRef(null);
-  const { match, commit, act, error } = usePacmanGame({ ...props, onGameEvents: (events) => audio.play(events) });
+  const { match, act, error, readOnly } = usePacmanGame({ ...props, onGameEvents: (events) => audio.play(events) });
   audio.enabled = !muted;
   useEffect(() => () => audio.dispose(), [audio]);
   useEffect(() => { if (match.status !== 'in-progress') audio.stop(); }, [audio, match.status]);
@@ -65,11 +65,13 @@ export default function PacmanGame(props) {
   const focusBoard = useCallback(() => boardRef.current?.focus({ preventScroll: true }), []);
   const toggle = useCallback(() => {
     audio.unlock();
-    if (match.status === 'ready') match.start();
-    else if (match.status === 'paused') match.resume();
-    else if (match.status === 'in-progress') { match.pause(); audio.stop(); }
-    commit(); focusBoard();
-  }, [match, commit, audio, focusBoard]);
+    act((game) => {
+      if (game.status === 'ready') game.start();
+      else if (game.status === 'paused') game.resume();
+      else if (game.status === 'in-progress') { game.pause(); audio.stop(); }
+    });
+    focusBoard();
+  }, [act, audio, focusBoard]);
   const toggleSound = useCallback(() => {
     const next = !audio.enabled;
     audio.setEnabled(next); setMuted(!next);
@@ -79,15 +81,15 @@ export default function PacmanGame(props) {
 
   useEffect(() => {
     function keydown(event) {
-      if (event.target.isContentEditable || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
+      if (readOnly || event.target.isContentEditable || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
       const direction = KEYS[event.key] ?? KEYS[event.key.toLowerCase()];
-      if (direction) { event.preventDefault(); match.setDirection(direction); }
+      if (direction) { event.preventDefault(); act((game) => game.setDirection(direction)); }
       if ((event.code === 'Space' && event.target.tagName !== 'BUTTON') || event.key.toLowerCase() === 'p') { event.preventDefault(); toggle(); }
       if (event.key.toLowerCase() === 'm') { event.preventDefault(); toggleSound(); }
     }
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [match, toggle, toggleSound]);
+  }, [readOnly, act, toggle, toggleSound]);
 
   function restart() {
     audio.stop();
@@ -95,11 +97,11 @@ export default function PacmanGame(props) {
     props.onRestart('PACMAN');
   }
 
-  return <ArcadeLayout {...props} title="Pac-Man" match={match} error={error} onRestart={restart} onToggle={toggle}
+  return <ArcadeLayout {...props} title="Pac-Man" match={match} error={error} readOnly={readOnly} onRestart={restart} onToggle={toggle}
     extraActions={<button className="button button--quiet pacman-sound" type="button" aria-label={muted ? 'Activar sonido' : 'Desactivar sonido'} aria-pressed={!muted} onClick={toggleSound}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z" />{muted ? <path d="M17 9 L22 15 M22 9 L17 15" /> : <><path d="M17 8 Q21 12 17 16" /><path d="M19 5 Q26 12 19 19" /></>}</svg></button>}
     help={<><p className="arcade-help">Come todos los puntos de los dos niveles. Las esferas grandes permiten comer fantasmas: 200, 400, 800 y 1600 puntos en una misma cadena. Las cerezas aparecen al avanzar y duran nueve segundos. Los túneles conectan ambos extremos.</p><div className="pacman-legend"><span><i className="ghost-dot ghost-dot--blinky" />Blinky te persigue</span><span><i className="ghost-dot ghost-dot--pinky" />Pinky se adelanta</span><span><i className="ghost-dot ghost-dot--inky" />Inky te rodea</span><span><i className="ghost-dot ghost-dot--clyde" />Clyde alterna su objetivo</span></div></>}
-    controls={<div className="pacman-controls"><span className="keyboard-help">Flechas / WASD · Espacio o P: pausa · M: sonido</span><div className="direction-pad" aria-label="Controles táctiles">{CONTROLS.map(([direction, label, name]) => <button key={direction} aria-label={`Mover ${name}`} className={`button button--quiet direction-${direction}`} onClick={() => { match.setDirection(direction); focusBoard(); }} type="button">{label}</button>)}</div><span className="sr-only" id="pacman-instructions">Usa flechas, WASD, los botones de dirección o desliza el dedo sobre el laberinto. Espacio o P pausa la partida. M activa o silencia los efectos.</span></div>}
+    controls={<div className="pacman-controls"><span className="keyboard-help">Flechas / WASD · Espacio o P: pausa · M: sonido</span><div className="direction-pad" aria-label="Controles táctiles">{CONTROLS.map(([direction, label, name]) => <button key={direction} aria-label={`Mover ${name}`} className={`button button--quiet direction-${direction}`} disabled={readOnly} onClick={() => { act((game) => game.setDirection(direction)); focusBoard(); }} type="button">{label}</button>)}</div><span className="sr-only" id="pacman-instructions">Usa flechas, WASD, los botones de dirección o desliza el dedo sobre el laberinto. Espacio o P pausa la partida. M activa o silencia los efectos.</span></div>}
     summary={<><div className="side-stat"><span>Puntuación</span><strong>{match.score}</strong></div><div className="side-stat"><span>Vidas</span><strong aria-label={`${match.lives} vidas`}>{'♥'.repeat(match.lives) || '0'}</strong></div><div className="side-stat"><span>Nivel</span><strong>{match.level} / {match.maxLevels}</strong></div><div className="side-stat"><span>Puntos restantes</span><strong>{match.maze.pelletsLeft}</strong></div></>}>
-    <PacmanBoard match={match} boardRef={boardRef} onToggle={toggle} />
+    <PacmanBoard match={match} boardRef={boardRef} onToggle={toggle} readOnly={readOnly} onDirection={(direction) => act((game) => game.setDirection(direction))} />
   </ArcadeLayout>;
 }

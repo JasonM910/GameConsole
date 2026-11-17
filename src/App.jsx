@@ -12,6 +12,8 @@ import { MinesweeperMatch } from './games/minesweeper/MinesweeperMatch.js';
 import { EventAdapter } from './services/EventAdapter.js';
 import { EventDelivery } from './services/EventDelivery.js';
 import { loadMatches, saveMatch } from './services/matchStorage.js';
+import { MatchRuntime } from './services/MatchRuntime.js';
+import SessionMonitor from './components/SessionMonitor.jsx';
 
 const SINGLE_PLAYER_GAMES = {
   PACMAN: { Model: PacmanMatch, View: PacmanGame },
@@ -51,12 +53,14 @@ export default function App() {
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [activeMatchId, setActiveMatchId] = useState(null);
   const [showStats, setShowStats] = useState(false);
+  const [chessOpponent, setChessOpponent] = useState('prolog');
   const [delivery, setDelivery] = useState({
     status: 'pending',
     message: 'Comprobando eventos pendientes de sincronización.',
   });
   const adapter = useMemo(() => new EventAdapter({ endpoint: import.meta.env.VITE_GAMESTATS_URL ?? '/api/events' }), []);
   const eventDelivery = useMemo(() => new EventDelivery(adapter), [adapter]);
+  const runtime = useMemo(() => new MatchRuntime(adapter), [adapter]);
   const deliveryRequest = useRef(0);
   const matches = storage.matches;
   const activeRecord = matches.find((match) => match.id === activeMatchId);
@@ -104,6 +108,35 @@ export default function App() {
     return () => window.removeEventListener('storage', handleStorage);
   }, [refreshMatches]);
 
+  runtime.callbacks = { onSave: refreshMatches, onEvents: publishEvents };
+  useEffect(() => {
+    runtime.start();
+    const stop = () => runtime.stop();
+    const restore = () => runtime.start();
+    window.addEventListener('pagehide', stop);
+    window.addEventListener('pageshow', restore);
+    const update = (event) => {
+      if (event.key?.startsWith('gameconsole:match:') && event.newValue) {
+        try { runtime.refresh(JSON.parse(event.newValue)); } catch { /* refreshMatches informa registros inválidos. */ }
+      }
+    };
+    window.addEventListener('storage', update);
+    return () => {
+      window.removeEventListener('pagehide', stop);
+      window.removeEventListener('pageshow', restore);
+      window.removeEventListener('storage', update);
+      runtime.stop();
+    };
+  }, [runtime]);
+
+  function openMatch(id) {
+    const record = loadMatches().find((match) => match.id === id);
+    if (!record) return;
+    runtime.open(record);
+    setActiveMatchId(id);
+    setShowStats(false);
+  }
+
   function startMatch(gameId = selectedGameId) {
     if (!gameId) return;
     try {
@@ -111,43 +144,40 @@ export default function App() {
         const match = new SINGLE_PLAYER_GAMES[gameId].Model();
         saveMatch(match.toJSON());
         refreshMatches();
-        setActiveMatchId(match.id);
+        openMatch(match.id);
         return;
       }
-      const match = new ChessMatch();
+      const match = new ChessMatch({ opponent: chessOpponent,
+        players: { white: 'PLAYER_WHITE', black: chessOpponent === 'prolog' ? 'PROLOG' : 'PLAYER_BLACK' } });
       const events = makeMatchEvents(match, adapter);
       for (const event of events) {
         match.appendEvent(event);
       }
       saveMatch(match.toJSON());
       refreshMatches();
-      setActiveMatchId(match.id);
+      openMatch(match.id);
       void publishEvents(events);
     } catch (error) {
       setStorage((current) => ({ ...current, error: error.message }));
     }
   }
 
-  function persistMatch(record) {
-    try {
-      saveMatch(record);
-      refreshMatches();
-    } catch (error) {
-      setStorage((current) => ({ ...current, error: error.message }));
-      throw error;
-    }
+  if (showStats) {
+    return <main className="home-layout"><header className="match-topbar"><button className="text-button" onClick={() => setShowStats(false)} type="button">← {activeRecord ? 'Volver a la partida' : 'Consola'}</button><span className="match-brand">GAME<span className="brand-highlight">STATS</span></span></header><div className="home-content"><SessionMonitor matches={matches} onOpen={openMatch} /><StatisticsPanel onSync={publishEvents} delivery={delivery} /></div></main>;
   }
 
   if (activeRecord?.gameId === 'CHESS') {
     return (
       <ChessGame
+        key={activeRecord.id}
+        runtime={runtime}
         adapter={adapter}
         delivery={delivery}
         matches={matches}
         onBack={() => setActiveMatchId(null)}
         onEvents={publishEvents}
-        onOpenMatch={setActiveMatchId}
-        onSave={persistMatch}
+        onOpenMatch={openMatch}
+        onStats={() => setShowStats(true)}
         record={activeRecord}
       />
     );
@@ -155,13 +185,9 @@ export default function App() {
 
   if (SINGLE_PLAYER_GAMES[activeRecord?.gameId]) {
     const Game = SINGLE_PLAYER_GAMES[activeRecord.gameId].View;
-    return <Game key={activeRecord.id} record={activeRecord} adapter={adapter}
-      delivery={delivery} onSave={persistMatch} onEvents={publishEvents}
+    return <Game key={activeRecord.id} record={activeRecord} adapter={adapter} runtime={runtime}
+      delivery={delivery} onEvents={publishEvents} onStats={() => setShowStats(true)}
       onBack={() => setActiveMatchId(null)} onRestart={startMatch} />;
-  }
-
-  if (showStats) {
-    return <main className="home-layout"><header className="match-topbar"><button className="text-button" onClick={() => setShowStats(false)} type="button">← Consola</button><span className="match-brand">GAME<span className="brand-highlight">STATS</span></span></header><div className="home-content"><StatisticsPanel onSync={publishEvents} delivery={delivery} /></div></main>;
   }
 
   return (
@@ -201,12 +227,15 @@ export default function App() {
 
       <div className="home-content">
         <GameCatalog
+          chessOpponent={chessOpponent}
+          onChessOpponent={setChessOpponent}
           onSelect={setSelectedGameId}
           onStart={() => startMatch()}
           selectedGameId={selectedGameId}
         />
 
         {storage.error && <p className="storage-error" role="alert">{storage.error}</p>}
+        <SessionMonitor matches={matches} onOpen={openMatch} />
 
         <section className="saved-section" aria-labelledby="saved-title">
           <div className="section-heading section-heading--saved">
@@ -218,14 +247,14 @@ export default function App() {
           ) : (
             <div className="saved-grid">
               {matches.map((match) => (
-                <button className="saved-card" key={match.id} onClick={() => setActiveMatchId(match.id)} type="button">
+                <button className="saved-card" key={match.id} onClick={() => openMatch(match.id)} type="button">
                   <span className="saved-card__icon">{{ CHESS: '♞', PACMAN: '◉', MEMORY: '▣', MINESWEEPER: '⚑' }[match.gameId]}</span>
                   <span className="saved-card__main">
                     <strong>{{ CHESS: 'Ajedrez', PACMAN: 'Pac-Man', MEMORY: 'Memoria', MINESWEEPER: 'Buscaminas' }[match.gameId]}</strong>
                     <small>{match.id.slice(0, 8).toUpperCase()} · {formatDate(match.createdAt)}</small>
                   </span>
                   <span className={`saved-card__status${match.status === 'finished' ? ' is-done' : ''}`}>
-                    {match.status === 'finished' ? 'FINALIZADA' : 'EN CURSO'}
+                    {{ finished: 'FINALIZADA', paused: 'PAUSADA', ready: 'LISTA', 'in-progress': 'EN CURSO' }[match.status]}
                   </span>
                   <span aria-hidden="true" className="saved-card__arrow">↗</span>
                 </button>

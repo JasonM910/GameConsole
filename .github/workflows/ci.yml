@@ -24,6 +24,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Verify Prolog rules and search
+        run: docker build -t gameconsole-prolog-test ./prolog
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
@@ -62,11 +64,12 @@ jobs:
           INTEGRATION_RECEIPT: ${{ runner.temp }}/integration.json
         run: |
           npm run test:integration
+          npm run test:prolog
           docker compose restart gamestats
           docker compose up -d --wait --wait-timeout 90
           node scripts/smoke-integration.mjs --verify
-      - name: Package tested web image
-        run: docker save gameconsole-web -o "$RUNNER_TEMP/gameconsole-web.tar"
+      - name: Package tested web and Prolog images
+        run: docker save gameconsole-web gameconsole-prolog -o "$RUNNER_TEMP/gameconsole-images.tar"
       - run: npx playwright install --with-deps chromium
         working-directory: GameConsole
       - name: Verify browser against real services
@@ -78,7 +81,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: gameconsole-docker
-          path: ${{ runner.temp }}/gameconsole-web.tar
+          path: ${{ runner.temp }}/gameconsole-images.tar
           if-no-files-found: error
       - name: Container logs
         if: failure()

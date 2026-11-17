@@ -4,7 +4,7 @@ import ArcadeLayout from './ArcadeLayout.jsx';
 import { useSinglePlayerGame } from './useSinglePlayerGame.js';
 
 export default function MinesweeperGame(props) {
-  const { match, act, error } = useSinglePlayerGame(MinesweeperMatch, props);
+  const { match, act, error, readOnly } = useSinglePlayerGame(MinesweeperMatch, props);
   const [flagMode, setFlagMode] = useState(false);
   const { board } = match;
   const playing = match.status === 'in-progress';
@@ -16,7 +16,7 @@ export default function MinesweeperGame(props) {
   }
 
   return (
-    <ArcadeLayout {...props} title="Buscaminas" match={match} error={error} onRestart={restart}
+    <ArcadeLayout {...props} title="Buscaminas" match={match} error={error} readOnly={readOnly} onRestart={restart}
       help={<p className="arcade-help">Abre todas las casillas sin minas para ganar. El primer clic es seguro. Después puedes colocar o retirar banderas con clic derecho o con «Marcar banderas», también en pantalla táctil. Los números indican las minas en las ocho casillas vecinas.</p>}
       onToggle={() => act((game) => game.status === 'ready' ? game.start() : game.status === 'paused' ? game.resume() : game.pause())}
       summary={<><div className="side-stat"><span>Tablero</span><strong>{board.rows} × {board.columns}</strong></div><div className="side-stat"><span>Minas / Banderas</span><strong>{board.mineCount} / {board.flagCount}</strong></div><div className="side-stat"><span>Casillas seguras abiertas</span><strong>{board.revealedCount} / {board.rows * board.columns - board.mineCount}</strong></div></>}
@@ -33,7 +33,7 @@ export default function MinesweeperGame(props) {
             className={`minesweeper-cell${cell.revealed ? ' is-revealed' : ''}${cell.flagged ? ' is-flagged' : ''}${showMine ? ' is-mine' : ''}${showMine && cell.revealed ? ' is-triggered' : ''}${wrongFlag ? ' is-wrong-flag' : ''}`}
             data-adjacent={cell.revealed && !cell.mine ? cell.adjacentMines : undefined}
             aria-label={`Fila ${cell.row + 1}, columna ${cell.column + 1}: ${description}`}
-            disabled={!playing || cell.revealed}
+            disabled={readOnly || !playing || cell.revealed}
             onClick={() => act((game) => flagMode ? game.toggleFlag(cell.row, cell.column) : game.reveal(cell.row, cell.column))}
             onContextMenu={(event) => { event.preventDefault(); act((game) => game.toggleFlag(cell.row, cell.column)); }}>
             <span aria-hidden="true">{showMine ? '✹' : wrongFlag ? '×' : cell.flagged ? '⚑' : cell.revealed && cell.adjacentMines > 0 ? cell.adjacentMines : ''}</span>

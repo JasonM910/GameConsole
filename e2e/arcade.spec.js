@@ -60,6 +60,7 @@ test('Ajedrez conserva movimientos legales y partidas independientes', async ({ 
   await expect(page.getByText('Selecciona un juego para comenzar')).toBeVisible();
   await expect(page.getByRole('button', { name: /Nueva partida/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Ajedrez/ }).click();
+  await page.getByRole('radio', { name: 'Dos personas' }).check();
   await page.getByRole('button', { name: /Nueva partida/ }).click();
   await page.getByRole('gridcell', { name: /^e2 / }).click();
   await page.getByRole('gridcell', { name: /^e4/ }).click();

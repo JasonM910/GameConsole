@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
-import { gameStatsTarget } from './devConfig.mjs';
+import { gameStatsTarget, prologTarget } from './devConfig.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const env = loadEnv('development', root, '');
 const target = gameStatsTarget(env);
+const aiTarget = prologTarget(env);
 
 function run(command, args, quiet = false) {
   return new Promise((resolve, reject) => {
@@ -18,7 +19,9 @@ function run(command, args, quiet = false) {
 async function isReady() {
   try {
     const response = await fetch(new URL('/health', target), { signal: AbortSignal.timeout(4000) });
-    return response.ok && (await response.json()).status === 'ok';
+    if (!response.ok || (await response.json()).status !== 'ok') return false;
+    const ai = await fetch(new URL('/api/prolog/health', aiTarget), { signal: AbortSignal.timeout(4000) });
+    return ai.ok && (await ai.json()).status === 'ok';
   } catch { return false; }
 }
 
@@ -26,9 +29,9 @@ try {
   if (!await isReady()) {
     const composeTarget = gameStatsTarget({ GAMECONSOLE_PORT: env.GAMECONSOLE_PORT });
     if (target !== composeTarget) {
-      throw new Error(`GameStats no responde en ${target}. Inicia Go y Scala o corrige GAMESTATS_PROXY_TARGET.`);
+      throw new Error(`Comprueba GameStats en ${target} y Prolog en ${aiTarget}. Inicia Go, Scala y Prolog o corrige los destinos del proxy.`);
     }
-    console.log('Iniciando los servicios de GameStats con Docker Compose…');
+    console.log('Iniciando GameStats y Prolog con Docker Compose…');
     try {
       await run('docker', ['info', '--format', '{{.ServerVersion}}'], true);
     } catch {

@@ -22,7 +22,9 @@ test('un fallo conserva el lote y un reintento reutiliza IDs; solicitudes se ser
   const storage = memoryStorage();
   const readMatches = () => [{ id: 'match', events }];
   const delivery = new EventDelivery(adapter, { storage, readMatches });
-  await assert.rejects(delivery.sync(), /sin conexión/);
+  const failure = await delivery.sync();
+  assert.equal(failure.status, 'failed');
+  assert.match(failure.failures[0].message, /sin conexión/);
   assert.equal(storage.getItem('gameconsole:delivered:match'), null);
   fail = false;
   await Promise.all([delivery.sync(), delivery.sync()]);
@@ -77,7 +79,9 @@ test('el panel y el envío manejan errores vacíos o HTML del proxy sin errores 
     const adapter = new EventAdapter({ endpoint: '/api/events', fetchImpl });
     const storage = memoryStorage();
     const delivery = new EventDelivery(adapter, { storage, readMatches: () => [{ id: 'P1', events: [{ eventId: 'E1' }] }] });
-    await assert.rejects(delivery.sync(), /GameStats no está disponible/);
+    const result = await delivery.sync();
+    assert.equal(result.status, 'failed');
+    assert.match(result.failures[0].message, /GameStats no está disponible/);
     assert.equal(storage.getItem('gameconsole:delivered:P1'), null);
   }
   await assert.rejects(fetchStats({ fetchImpl: async () => new Response('', { status: 200 }) }), /respuesta vacía/);
@@ -90,4 +94,29 @@ test('una cola vacía no afirma que el servicio está conectado', async () => {
   const result = await delivery.sync();
   assert.equal(result.status, 'idle');
   assert.equal(result.message, 'No hay eventos pendientes de envío.');
+});
+
+test('un rechazo persistente no bloquea otras partidas y cada una conserva el orden de sus lotes', async () => {
+  const storage = memoryStorage();
+  const requests = [];
+  let release;
+  const blocked = new Promise((resolve) => { release = resolve; });
+  const matches = [{ id: 'bad', events: [{ eventId: 'bad-1' }] },
+    { id: 'good', events: Array.from({ length: 205 }, (_, index) => ({ eventId: `good-${index}` })) }];
+  const delivery = new EventDelivery({ endpoint: '/api/events', sendBatch: async (events) => {
+    requests.push(events.map((event) => event.eventId));
+    if (events[0].eventId === 'bad-1') { await blocked; throw new Error('HTTP 400'); }
+    return { status: 'sent', eventIds: events.map((event) => event.eventId) };
+  } }, { storage, readMatches: () => matches });
+  const pending = delivery.sync();
+  await new Promise(setImmediate);
+  assert.equal(JSON.parse(storage.getItem('gameconsole:delivered:good')).length, 205, 'no espera la respuesta de la partida rechazada');
+  assert.deepEqual(requests.filter((batch) => batch[0].startsWith('good')).map((batch) => [batch[0], batch.length]), [['good-0', 100], ['good-100', 100], ['good-200', 5]]);
+  release();
+  assert.equal((await pending).status, 'failed');
+  assert.equal(storage.getItem('gameconsole:delivered:bad'), null);
+  matches[1].events.push({ eventId: 'good-new' });
+  assert.equal((await delivery.sync()).status, 'failed');
+  assert.deepEqual(requests.at(-1), ['good-new']);
+  assert.equal(JSON.parse(storage.getItem('gameconsole:delivered:good')).length, 206);
 });

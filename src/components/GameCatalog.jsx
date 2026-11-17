@@ -43,7 +43,7 @@ const GAMES = [
   },
 ];
 
-export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
+export default function GameCatalog({ selectedGameId, onSelect, onStart, chessOpponent, onChessOpponent }) {
   const selected = GAMES.find((game) => game.id === selectedGameId);
 
   return (
@@ -96,11 +96,15 @@ export default function GameCatalog({ selectedGameId, onSelect, onStart }) {
               {!selected
                 ? 'Elige una tarjeta del catálogo.'
                 : selected.available
-                ? selected.id === 'CHESS' ? 'Partida local para dos jugadores' : 'Partida individual'
+                ? selected.id === 'CHESS' ? chessOpponent === 'prolog' ? 'Tú contra la computadora · Prolog' : 'Partida local para dos jugadores' : 'Partida individual'
                 : 'Módulo pendiente de implementación'}
             </span>
           </div>
         </div>
+        {selected?.id === 'CHESS' && <fieldset className="chess-opponent"><legend>Oponente</legend>
+          <label><input type="radio" name="chess-opponent" value="prolog" checked={chessOpponent === 'prolog'} onChange={() => onChessOpponent('prolog')} /> Computadora · Prolog</label>
+          <label><input type="radio" name="chess-opponent" value="local" checked={chessOpponent === 'local'} onChange={() => onChessOpponent('local')} /> Dos personas</label>
+        </fieldset>}
         {selected?.available ? (
           <button className="button button--primary" onClick={onStart} type="button">
             <span aria-hidden="true">＋</span> Nueva partida

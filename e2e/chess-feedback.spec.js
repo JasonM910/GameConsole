@@ -7,6 +7,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto('/');
   await page.getByRole('button', { name: /Ajedrez/ }).click();
+  await page.getByRole('radio', { name: 'Dos personas' }).check();
   await page.getByRole('button', { name: /Nueva partida/ }).click();
 });
 

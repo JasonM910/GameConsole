@@ -20,8 +20,12 @@ export class ChessMatch extends GameMatch {
     pgn = '',
     lastMoveAt = createdAt ?? Date.now(),
     result = null,
+    opponent = 'local',
+    computerColor = 'b',
   } = {}) {
     super({ id, gameId: 'CHESS', players, createdAt });
+    this.opponent = opponent === 'prolog' ? 'prolog' : 'local';
+    this.computerColor = computerColor === 'w' ? 'w' : 'b';
     this.engine = new Chess();
     if (pgn) {
       this.engine.loadPgn(pgn);
@@ -54,6 +58,10 @@ export class ChessMatch extends GameMatch {
 
   get turn() {
     return this.engine.turn();
+  }
+
+  get isComputerTurn() {
+    return this.opponent === 'prolog' && this.status === 'in-progress' && this.turn === this.computerColor;
   }
 
   playerIdFor(color) {
@@ -128,12 +136,12 @@ export class ChessMatch extends GameMatch {
     };
   }
 
-  resign() {
+  resign(color = this.engine.turn()) {
     if (this.status !== 'in-progress') {
       throw new Error('La partida ya terminó');
     }
 
-    const resignedColor = this.engine.turn();
+    const resignedColor = color;
     const winnerColor = resignedColor === 'w' ? 'b' : 'w';
     this.finish();
     this.result = winnerColor;
@@ -156,6 +164,8 @@ export class ChessMatch extends GameMatch {
       pgn: this.pgn,
       lastMoveAt: this.lastMoveAt,
       result: this.result,
+      opponent: this.opponent,
+      computerColor: this.computerColor,
     };
   }
 }

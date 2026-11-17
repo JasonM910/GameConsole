@@ -1,4 +1,8 @@
 services:
+  prolog:
+    build: ./prolog
+    restart: unless-stopped
+
   analyzer:
     build: ../GameStats/scala
     command: ["--serve"]
@@ -33,6 +37,8 @@ services:
       - "${GAMECONSOLE_PORT:-8088}:80"
     depends_on:
       gamestats:
+        condition: service_healthy
+      prolog:
         condition: service_healthy
 
 volumes:
