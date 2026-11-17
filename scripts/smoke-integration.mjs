@@ -19,7 +19,7 @@ async function request(path, options = {}) {
 function fixtures() {
   const pacman = new PacmanMatch({ rows: ['#####', '#P.o#', '#G F#', '#####'], maxLevels: 1 });
   pacman.ghosts.forEach((ghost) => { ghost.cooldownMs = 10000; });
-  pacman.start(); pacman.tick(360);
+  pacman.start(); pacman.tick(3000);
   assert.equal(pacman.result, 'WIN');
   collectGameEvents(pacman, adapter);
   const memory = new MemoryMatch(); memory.start(); memory.tick(1000);

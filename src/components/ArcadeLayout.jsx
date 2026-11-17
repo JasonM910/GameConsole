@@ -1,4 +1,4 @@
-export default function ArcadeLayout({ title, match, delivery, error, onBack, onRestart, onToggle, children, summary, help, controls, toolbar }) {
+export default function ArcadeLayout({ title, match, delivery, error, onBack, onRestart, onToggle, children, summary, help, controls, toolbar, extraActions }) {
   const finished = match.status === 'finished';
   const state = { ready: 'LISTA', 'in-progress': 'EN CURSO', paused: 'PAUSADA', finished: 'FINALIZADA' }[match.status];
   return (
@@ -15,6 +15,7 @@ export default function ArcadeLayout({ title, match, delivery, error, onBack, on
             <div className="arcade-actions">
               {!finished && <button className="button button--primary" onClick={onToggle} type="button">{match.status === 'ready' ? 'Iniciar' : match.status === 'paused' ? 'Continuar' : 'Pausar'}</button>}
               <button className="button button--quiet" onClick={onRestart} type="button">Nueva partida / Reiniciar</button>
+              {extraActions}
             </div>
             <span className="game-clock" aria-label="Tiempo de juego">◷ {match.elapsedSeconds()} s</span>
           </div>

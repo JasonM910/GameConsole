@@ -64,13 +64,17 @@ Vite muestra su dirección local y, con esa variable explícita, redirige `/api`
 ## Juegos
 
 - **Ajedrez:** mantiene `chess.js`, dos jugadores, movimientos legales, promoción, jaque, mate, tablas, abandono y restauración de partidas. El aviso sobre el tablero distingue jaque, jaque mate, tablas y abandono; resalta el rey amenazado, muestra la última jugada y anuncia al ganador. El resultado se conserva al restaurar la partida. El oponente Prolog sigue pendiente; no se simula una IA.
-- **Pac-Man:** iniciar con el botón, mover con flechas/WASD o controles táctiles, pausar con espacio o botón. Tiene tres vidas, fantasmas con persecución/dispersión y huida bajo poder, puntos, frutas y esferas de poder de seis segundos. Se gana al limpiar los dos niveles; se pierde al agotar las vidas. Puntos: normal 10, poder 50, fruta 100, fantasma 200. El segundo nivel acelera los fantasmas.
+- **Pac-Man clásico:** laberinto propio de 21×22, cuatro fantasmas, túneles laterales y movimiento continuo en Canvas. Iniciar con el botón o tocando el laberinto; mover con flechas/WASD, botones o deslizamientos. Espacio o P pausa; M activa o silencia los efectos sintetizados. Los giros se pueden preparar antes de llegar a una esquina y la marcha se puede invertir en un pasillo. Tiene tres vidas y dos niveles; el segundo aumenta la velocidad de los fantasmas. Puntos: normal 10, poder 50, cerezas 100 y cadena de fantasmas 200/400/800/1600. El poder dura seis segundos en el primer nivel y cinco en el segundo. Las cerezas aparecen al consumir el 35 % y el 70 % de los puntos y duran nueve segundos. Se gana al limpiar ambos niveles y se pierde al agotar las vidas, con animaciones de cierre.
 - **Memoria:** ocho parejas en un tablero 4×4, límite de 180 segundos de juego activo, dos cartas por intento y espera de 800 ms tras un fallo. Encontrar una pareja deja disponibles las demás cartas. Termina al encontrar todas o al agotar el tiempo.
 - **Buscaminas:** tablero de 9×9 con diez minas. Pulsar «Iniciar» y abrir una casilla; el primer clic es seguro y abre una zona vacía cuando hay espacio. Las casillas vacías descubren automáticamente sus vecinas. Después del primer clic se pueden colocar o retirar hasta diez banderas con clic derecho o con el modo «Marcar banderas» en pantallas táctiles. Se gana al abrir las 71 casillas sin minas, sin necesidad de marcar todas las minas; pisar una mina termina en derrota. Al finalizar se muestran las minas y las banderas incorrectas.
 
 Pac-Man, Memoria y Buscaminas se pausan al cambiar de ventana o abandonar la vista. Al restaurar una partida se debe pulsar «Continuar». El reloj avanza únicamente mientras se juega. Reiniciar finaliza la partida anterior como derrota si estaba iniciada y crea otro UUID, conservando su historia.
 
 Los tableros se ajustan al ancho y a la altura de la ventana. Los controles principales y las métricas de los juegos individuales están sobre el tablero; las instrucciones y la información de sincronización son desplegables. En pantallas horizontales bajas, los controles se ubican al lado del juego. Al cambiar entre consola, partida y estadísticas se vuelve al inicio de la vista.
+
+Pac-Man separa `PacmanMatch` (reglas, fases y eventos), `Pacman`/`Ghost` (desplazamiento y objetivos), `Maze` (pasillos, puerta y rutas), `PacmanRenderer` (dibujo) y `PacmanAudio` (efectos generados). La simulación y el dibujo usan `requestAnimationFrame`; React actualiza el panel aproximadamente cada 100 ms y se guarda al emitir eventos, cada 500 ms de juego o al pausar. Blinky persigue al jugador, Pinky apunta por delante, Inky proyecta su objetivo respecto a Blinky y Clyde alterna persecución y retirada. Los fantasmas comidos regresan físicamente a la casa. Se conservan los identificadores, eventos y laberintos de partidas anteriores; para usar el escenario nuevo se crea una nueva partida.
+
+Referencias de comportamiento: [The Pac-Man Dossier, de Jamey Pittman](https://pacman.holenet.info/). Se evaluaron [masonicGIT/pacman](https://github.com/masonicGIT/pacman) y otras versiones existentes; se eligió una implementación propia para mantener las clases del proyecto, el guardado y el contrato de GameStats. El código, el laberinto, el dibujo vectorial y los efectos de esta integración se desarrollaron dentro de GameConsole.
 
 ## Eventos y estadísticas
 
@@ -122,7 +126,7 @@ docker compose up -d --wait
 node scripts/smoke-integration.mjs --verify
 ```
 
-Para incluir las pruebas de navegador de Memoria y Buscaminas con recepción real de eventos y consulta de métricas Scala:
+Para incluir las pruebas de navegador de Pac-Man, Memoria y Buscaminas con recepción real de eventos y consulta de métricas Scala:
 
 ```powershell
 $env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:8088'
@@ -130,7 +134,7 @@ $env:GAMESTATS_LIVE = '1'
 npm run test:e2e
 ```
 
-El smoke test agrega cuatro partidas y las pruebas de navegador reales agregan otras dos al histórico; usar un proyecto Compose separado (`docker compose -p gameconsole-check ...`) para aislarlas de partidas personales.
+El smoke test agrega cuatro partidas y las pruebas de navegador reales agregan otras tres al histórico; usar un proyecto Compose separado (`docker compose -p gameconsole-check ...`) para aislarlas de partidas personales. La prueba de Pac-Man consulta los puntos de la partida en curso y luego comprueba su cierre al reiniciarla.
 
 ## CI/CD y deployment
 

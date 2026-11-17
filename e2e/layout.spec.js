@@ -47,7 +47,7 @@ test('los controles táctiles de Pac-Man caben y responden en horizontal', async
     const bounds = await pad.boundingBox();
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(390);
     await page.getByRole('button', { name: 'Iniciar', exact: true }).tap();
-    await page.getByRole('button', { name: 'Mover up', exact: true }).tap();
+    await page.getByRole('button', { name: 'Mover arriba', exact: true }).tap();
     await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('gameconsole:match:'))
       .map((key) => JSON.parse(localStorage[key])).find((record) => record.gameId === 'PACMAN').player.requestedDirection)).toBe('up');
   } finally { await context.close(); }

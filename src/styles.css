@@ -89,7 +89,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .game-card h3 { margin: 4px 0 3px; font: 600 21px var(--display); letter-spacing: -.04em; }
 .game-card p { margin: 0; color: #89968c; font-size: 11px; }
 .game-card__arrow { position: absolute; right: 17px; bottom: 18px; color: #859186; font-size: 17px; opacity: 0; transform: translate(-3px,3px); transition: .2s; }
-.game-card:hover .game-card__arrow { opacity: 1; transform: none; color: var(--green); }
+.game-card:hover .game-card__arrow, .game-card.is-selected .game-card__arrow { opacity: 1; transform: none; color: var(--green); }
 .selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 72px; padding: 13px 15px; margin-top: 12px; background: rgba(25,34,28,.8); border: 1px solid var(--line); border-radius: 9px; }
 .selection-copy { display: flex; align-items: center; gap: 11px; }
 .selection-dot.is-live { background: var(--green); box-shadow: 0 0 10px rgba(184,239,108,.5); }
@@ -425,7 +425,7 @@ body::after {
   pointer-events: none;
 }
 
-.game-card:hover {
+.game-card:hover, .game-card.is-selected {
   border-color: #ccff33;
   transform: translate(-2px, -2px);
   background:
@@ -434,12 +434,17 @@ body::after {
   box-shadow: 6px 6px 0 rgba(204, 255, 51, .22), 0 0 22px rgba(204, 255, 51, .1);
 }
 
-.game-card--pacman:hover {
+.game-card--chess:hover, .game-card--chess.is-selected {
+  border-color: #41f5ff;
+  box-shadow: 6px 6px 0 rgba(65, 245, 255, .2), 0 0 22px rgba(65, 245, 255, .1);
+}
+
+.game-card--pacman:hover, .game-card--pacman.is-selected {
   border-color: #ffdc69;
   box-shadow: 6px 6px 0 rgba(255, 220, 105, .2), 0 0 22px rgba(255, 220, 105, .1);
 }
 
-.game-card--memory:hover {
+.game-card--memory:hover, .game-card--memory.is-selected {
   border-color: #ff4fd8;
   box-shadow: 6px 6px 0 rgba(255, 79, 216, .2), 0 0 22px rgba(255, 79, 216, .1);
 }
@@ -771,7 +776,7 @@ body::after {
 .memory-card.is-matched { border-color: #ccff33; color: #ccff33; background: #202d25; }
 .memory-card small { position: absolute; right: 8px; bottom: 6px; font-size: 16px; }
 .memory-card:disabled { cursor: default; }
-.game-card--minesweeper:hover { border-color: #ccff33; box-shadow: 0 0 24px rgba(204,255,51,.12); }
+.game-card--minesweeper:hover, .game-card--minesweeper.is-selected { border-color: #ccff33; box-shadow: 0 0 24px rgba(204,255,51,.12); }
 .minesweeper-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .minesweeper-toolbar .button { font-size: 12px; padding: 12px; }
 .minesweeper-toolbar .button:disabled { opacity: .45; cursor: default; }
@@ -1018,4 +1023,38 @@ details.side-card > summary .session-count { display: inline-grid; margin-left: 
   .chess-controls .control-label { margin-bottom: 4px; }
   .chess-controls .button { margin-top: 8px; }
   .match-sidebar { display: flex; }
+}
+
+/* Pac-Man: canvas continuo con proporciones del laberinto y controles compartidos. */
+.arcade-game--pacman .pacman-board--canvas {
+  display: block; position: relative; padding: 0;
+  width: min(100%, 560px, calc(max(260px, calc(100svh - 310px)) * var(--maze-ratio)));
+  aspect-ratio: var(--maze-ratio); overflow: hidden; border: 2px solid #252958; border-radius: 7px;
+  background: #03030b; line-height: 0; touch-action: none;
+  box-shadow: 0 0 0 5px #080916, 0 0 24px rgba(39, 65, 255, .12);
+}
+.pacman-board--canvas canvas { display: block; width: 100%; height: 100%; }
+.pacman-board--canvas:focus-visible { outline: 2px solid #ffdc69; outline-offset: 5px; }
+.pacman-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; pointer-events: none; line-height: 1.5; text-align: center; padding: 16px; }
+.pacman-overlay.is-shaded { background: rgba(3, 3, 11, .68); }
+.pacman-overlay strong { color: #ffe600; font: clamp(12px, 2vw, 20px)/1.8 'Press Start 2P', monospace; text-shadow: 0 0 14px rgba(255, 230, 0, .3); }
+.pacman-overlay span { color: #ded8ee; font: 11px/1.6 var(--mono); padding: 4px 8px; background: rgba(3, 3, 11, .75); border-radius: 3px; }
+.pacman-power { position: absolute; top: 5px; right: 5px; padding: 4px 7px; border-radius: 3px; color: #fff7cf; background: #2335ac; font: bold 10px/1.3 var(--mono); pointer-events: none; }
+.pacman-sound { display: inline-grid; place-items: center; width: 40px; padding-inline: 8px !important; flex-shrink: 0; }
+.pacman-sound[aria-pressed="true"] { color: #ffdc69; border-color: #7a663c; }
+.arcade-game--pacman .game-metrics .side-stat { padding-block: 6px; }
+.arcade-game--pacman .game-status-banner { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.pacman-legend { display: grid; gap: 10px; margin-top: 16px; font-size: 11px; color: #c9c0db; }
+.pacman-legend span { display: flex; align-items: center; gap: 8px; }
+.ghost-dot { flex: 0 0 10px; height: 12px; border-radius: 6px 6px 2px 2px; }
+.ghost-dot--blinky { background: #ff3648; } .ghost-dot--pinky { background: #ff9cda; }
+.ghost-dot--inky { background: #4ce5ec; } .ghost-dot--clyde { background: #ffac48; }
+@media (pointer: coarse) {
+  .arcade-game--pacman .pacman-board--canvas { width: min(100%, 560px, calc(max(260px, calc(100svh - 410px)) * var(--maze-ratio))); }
+}
+@media (max-height: 500px) and (min-width: 661px) {
+  .arcade-game--pacman .pacman-board--canvas { width: min(100%, calc((100svh - 130px) * var(--maze-ratio))); }
+  .arcade-game--pacman .arcade-actions { grid-template-columns: 64px 1fr 38px; gap: 5px; }
+  .arcade-game--pacman .arcade-actions .button { padding-inline: 5px; font-size: 9px; }
+  .arcade-game--pacman .pacman-sound { width: 38px; }
 }
